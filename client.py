@@ -127,6 +127,8 @@ class gui(object):
                     self.location_index = 0
                     self.selected = self.cache[0]
 
+
+
     def printmap(self):
         while 1:
             self.screen.clear()
