@@ -60,14 +60,17 @@ class client(object):
 
 class gui(object):
 
-    def __init__(self, max_x, max_y):
+    def __init__(self, max_x, max_y, tb_height = 5, tb_width = 30):
         self.max_x = max_x
         self.max_y = max_y
         self.screen = curses.initscr()
         curses.start_color()
         curses.init_pair(10, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(11, curses.COLOR_YELLOW,curses.COLOR_BLACK)
+        self.yellow = curses.color_pair(11)
         self.green = curses.color_pair(10)
         self.bold = curses.A_BOLD
+        self.tb = toolbar(tb_height, tb_width, max_y)
         self.cursor_x = 1
         self.cursor_y = 1
         self.location_index = 0
@@ -90,7 +93,18 @@ class gui(object):
                     return location["marker"]
                 else:
                     return "_"
-
+                    
+    def is_showed(self, location):
+        x = location["x"]
+        y = location["y"]
+        if y<=self.cur_y+self.max_y:
+            if y >= self.cur_y:
+                if x<=self.cur_x + self.max_x:
+                    if x>= self.cur_x:
+                        return True
+        return False
+                    
+        
     def select(self, direction):
         ycache2 = []
         self.cache = []
@@ -127,7 +141,36 @@ class gui(object):
                     self.location_index = 0
                     self.selected = self.cache[0]
 
-
+    def minimenu(self, data):
+        width = 20
+        count = 5
+        if data["x"] - self.cur_x > self.cur_x+self.max_x-data["x"]:
+            x = data["x"] -self.cur_x- width -1
+        else:
+            x = data["x"]-self.cur_x +2
+        
+        if data["y"]-self.cur_y >  self.cur_y + self.max_y - data["y"]:
+            y = data["y"] -self.cur_y - int(count/2)
+        else: 
+            y = data["y"]-self.cur_y 
+        menu = curses.newwin(count, width,y,x)
+        menu.border(0)
+        ndx = 1
+        for info in data["quickinfo"]:
+            menu.addstr(ndx,1,info)
+            ndx +=1
+        menu.refresh()      
+        self.tb.quick_info_tb()
+        while 1:
+            curses.noecho()
+            self.screen.keypad(True)
+            getkey = self.screen.getkey(self.max_y+1,1)
+            curses.echo()
+            self.screen.keypad(False)
+            if getkey == "q":
+                break
+        
+        
 
     def printmap(self):
         while 1:
@@ -150,6 +193,7 @@ class gui(object):
                     xcounter +=1
                 counter += 1
             self.screen.refresh()
+            self.tb.world_tb()
             curses.noecho()
             self.screen.keypad(True)
             getkey = self.screen.getkey(self.max_y+1, 1)
@@ -175,11 +219,40 @@ class gui(object):
 
             if getkey == "s":
                 self.cur_y +=1
+                
+            if getkey == "f":
+                if self.is_showed(self.selected):
+                    self.minimenu(self.selected)
+                
+class toolbar(object):
 
-ekran = gui(50,10)
+    def __init__(self, toolbar_height,toolbar_width, max_y):
+        self.tb = curses.newwin(toolbar_height, toolbar_width, max_y +2, 1)#tb = toolbar
+        self.yellow = curses.color_pair(11)
+        self.green = curses.color_pair(10)
+        self.bold = curses.A_BOLD
+        #self.tb.border(0)
+
+    def world_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1,1,"w/a/s/d",self.yellow)
+        self.tb.addstr(1,8,":Yon", self.bold)
+        self.tb.addstr(2,1,"q/e",self.yellow)
+        self.tb.addstr(2,4,":Onceki/Sonraki Secim", self.bold)
+        self.tb.addstr(3,1,"f",self.yellow)
+        self.tb.addstr(3,2,":Secim Yap",self.bold)
+        self.tb.refresh()
+        
+    def quick_info_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1,1,"q",self.yellow)
+        self.tb.addstr(1,2,":Pencereyi Kapat",self.bold)
+        self.tb.refresh()
+
+ekran = gui(42,10)
 ekran.cur_y = 0
 ekran.cur_x = 0
-ekran.map = [{"x":51,"y":11,"marker":"c"},{"x":5,"y":6,"marker":"M"},{"x":10, "y":10, "marker":"c"}]
+ekran.map = [{"x":51,"y":11,"marker":"C", "quickinfo":["Yalı Kampı","Level: 67","atesli_55 Klanı"]},{"x":5,"y":6,"marker":"M","options":["Ele Gecir"]},{"x":10, "y":10, "marker":"c","options":[]}]
 ekran.printmap()
 
 
