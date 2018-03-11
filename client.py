@@ -147,27 +147,49 @@ class gui(object):
     def placemenu(self, data):
         count = 0
         width = 30
+        cursor_pos = 1
         for place in data:
             count +=1
         if count > self.max_y:
             count = self.max_y
             
         menu = curses.newwin(count +2, width, 2, int(self.max_x/2)-int(width/2))
-        ndx = 1
-        for place in data:
-            menu.addstr(ndx, 1, place["quickinfo"][0])
-            ndx += 1
-            
-        self.tb.placemenu_tb()
-        menu.border(0)
-        menu.refresh()
-        
         while 1:
+            ndx = 1
+            for place in data:
+                if ndx == cursor_pos:
+                    menu.addstr(ndx, 1, place["quickinfo"][0], self.green)
+                else:
+                    menu.addstr(ndx, 1, place["quickinfo"][0])
+                ndx += 1
+            
+            self.tb.placemenu_tb()
+            menu.border(0)
+            menu.refresh()
+        
             curses.noecho()
             self.screen.keypad(True)
             getkey = self.screen.getkey(self.max_y+1, 1)
             if getkey == "g":
                 break
+
+            if getkey == "w":
+                if not cursor_pos == 1:
+                    cursor_pos = cursor_pos -1
+
+                else:
+                    cursor_pos = count
+
+            if getkey == "s":
+                if not cursor_pos == count:
+                    cursor_pos += 1
+
+                else:
+                    cursor_pos = 1
+            if getkey == "f":
+                return cursor_pos 
+
+        return False
         
         
     def minimenu(self, data):
@@ -250,8 +272,17 @@ class gui(object):
                 self.cur_y +=1
                 
             if getkey == "g":
-                self.placemenu(self.map)
-                
+                highlighted = self.placemenu(self.map)
+                if highlighted:
+                    self.selected = self.map[highlighted- 1]
+                    if self.selected["x"] - int(self.max_x/2)> 0:
+                        self.cur_x = self.selected["x"]- int(self.selected["x"]/2)
+                    else:
+                        self.cur_x = 0
+
+                    if self.selected["y"] - int(self.max_y/2)> 0:
+                        self.cur_y = self.selected["y"] - int(self.max_y/2)
+
                 
             if getkey == "f":
                 if self.is_showed(self.selected):
@@ -290,6 +321,8 @@ class toolbar(object):
         self.tb.addstr(1,4,":Pencereyi Kapat", self.bold)
         self.tb.addstr(2,1,"(w/s)", self.yellow)
         self.tb.addstr(2,6,":Yukari/Asagi", self.bold)
+        self.tb.addstr(3,1,"(f)", self.yellow)
+        self.tb.addstr(3,4,":Sec", self.bold)
         self.tb.refresh()
         
 
