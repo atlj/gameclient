@@ -97,6 +97,9 @@ class gui(object):
     def is_showed(self, location):
         x = location["x"]
         y = location["y"]
+        if x == 0:
+            if y == 0:
+                return False
         if y<=self.cur_y+self.max_y:
             if y >= self.cur_y:
                 if x<=self.cur_x + self.max_x:
@@ -140,9 +143,35 @@ class gui(object):
                 except IndexError:
                     self.location_index = 0
                     self.selected = self.cache[0]
-
+                    
+    def placemenu(self, data):
+        count = 0
+        width = 30
+        for place in data:
+            count +=1
+        if count > self.max_y:
+            count = self.max_y
+            
+        menu = curses.newwin(count +2, width, 2, int(self.max_x/2)-int(width/2))
+        ndx = 1
+        for place in data:
+            menu.addstr(ndx, 1, place["quickinfo"][0])
+            ndx += 1
+            
+        self.tb.placemenu_tb()
+        menu.border(0)
+        menu.refresh()
+        
+        while 1:
+            curses.noecho()
+            self.screen.keypad(True)
+            getkey = self.screen.getkey(self.max_y+1, 1)
+            if getkey == "g":
+                break
+        
+        
     def minimenu(self, data):
-        width = 20
+        width = 25
         count = 5
         if data["x"] - self.cur_x > self.cur_x+self.max_x-data["x"]:
             x = data["x"] -self.cur_x- width -1
@@ -167,7 +196,7 @@ class gui(object):
             getkey = self.screen.getkey(self.max_y+1,1)
             curses.echo()
             self.screen.keypad(False)
-            if getkey == "q":
+            if getkey == "f":
                 break
         
         
@@ -220,6 +249,10 @@ class gui(object):
             if getkey == "s":
                 self.cur_y +=1
                 
+            if getkey == "g":
+                self.placemenu(self.map)
+                
+                
             if getkey == "f":
                 if self.is_showed(self.selected):
                     self.minimenu(self.selected)
@@ -235,24 +268,35 @@ class toolbar(object):
 
     def world_tb(self):
         self.tb.clear()
-        self.tb.addstr(1,1,"w/a/s/d",self.yellow)
-        self.tb.addstr(1,8,":Yon", self.bold)
-        self.tb.addstr(2,1,"q/e",self.yellow)
-        self.tb.addstr(2,4,":Onceki/Sonraki Secim", self.bold)
-        self.tb.addstr(3,1,"f",self.yellow)
-        self.tb.addstr(3,2,":Secim Yap",self.bold)
+        self.tb.addstr(1,1,"(w/a/s/d)",self.yellow)
+        self.tb.addstr(1,10,":Yon", self.bold)
+        self.tb.addstr(2,1,"(q/e)",self.yellow)
+        self.tb.addstr(2,6,":Onceki/Sonraki Secim", self.bold)
+        self.tb.addstr(3,1,"(f)",self.yellow)
+        self.tb.addstr(3,4,":Bilgileri Goster",self.bold)
+        self.tb.addstr(4,1,"(g)", self.yellow)
+        self.tb.addstr(4,4,":Mekan Listesi",self.bold)
         self.tb.refresh()
         
     def quick_info_tb(self):
         self.tb.clear()
-        self.tb.addstr(1,1,"q",self.yellow)
-        self.tb.addstr(1,2,":Pencereyi Kapat",self.bold)
+        self.tb.addstr(1,1,"(f)",self.yellow)
+        self.tb.addstr(1,4,":Pencereyi Kapat",self.bold)
         self.tb.refresh()
+        
+    def placemenu_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1,1,"(g)",self.yellow)
+        self.tb.addstr(1,4,":Pencereyi Kapat", self.bold)
+        self.tb.addstr(2,1,"(w/s)", self.yellow)
+        self.tb.addstr(2,6,":Yukari/Asagi", self.bold)
+        self.tb.refresh()
+        
 
-ekran = gui(42,10)
+ekran = gui(50,15,7,40)
 ekran.cur_y = 0
 ekran.cur_x = 0
-ekran.map = [{"x":51,"y":11,"marker":"C", "quickinfo":["Yalı Kampı","Level: 67","atesli_55 Klanı"]},{"x":5,"y":6,"marker":"M","options":["Ele Gecir"]},{"x":10, "y":10, "marker":"c","options":[]}]
+ekran.map = [{"x":51,"y":11,"marker":"C", "quickinfo":["Yalı Kampı","Level: 67","atesli_55 Klanı"]},{"x":5,"y":6,"marker":"M","quickinfo":["Pussydestroyer Madeni","Level 69", "Biricik Klanı"]},{"x":10, "y":10, "marker":"c","quickinfo":["Swagboyyolo Kampı","Level 100","Babatek Klanı"]}]
 ekran.printmap()
 
 
