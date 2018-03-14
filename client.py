@@ -1,12 +1,46 @@
-import socket, time, os, json, curses
+import socket, time, os, json, curses, form, menu
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-cdir = os.path.dirname(os.path.realpath(__file__))+"/"
+cdir = os.path.dirname(os.path.realpath(__file__))
 
+class config(object):
+    def __init__(self, config_name, directory = cdir):
+        self.config_name = config_name
+        self.directory = directory
+        if self.control():
+            self.config_table = self.load()
+        else:
+            self.config_table = {}
+            
+    def add(self, index, data):
+        self.config_table[index] = data
+        self.save(self.config_table)
+        
+        
+    def bsave(self, data):
+        with open(os.path.join(self.directory,self.config_name), "wb") as dosya:
+            dosya.write(data)
+            
+    def load(self):
+        with open(os.path.join(self.directory,self.config_name), "r") as dosya:
+           return json.load(dosya)
+        
+    def save(self, data):
+        with open(os.path.join(self.directory,self.config_name), "w") as dosya:
+            json.dump(data, dosya)
+            
+    def delete(self):
+        os.remove(os.path.join(self.directory,self.config_name))
+        self.config.table = {}
+        
+    def control(self):
+        if os.path.exists(os.path.join(self.directory,self.config_name)):
+           return True
+        return False
 
 class logger(object):
     def __init__(self, logtype):
         self.logname = logtype +"log" + " "+time.ctime()
-        self.logdir = "{}logs/".format(cdir)
+        self.logdir = os.path.join(cdir, "logs")
         self.logtype = logtype
 
     def write(self, data):
@@ -14,8 +48,8 @@ class logger(object):
         if not os.path.exists(self.logdir):
             os.makedirs(self.logdir)
         
-        if not os.path.exists(self.logdir+self.logname):#her logdan once dosya acmayi engellemek icin
-            self.logfile = open(self.logdir+self.logname, "w")
+        if not os.path.exists(os.path.join(self.logdir,self.logname)):#her logdan once dosya acmayi engellemek icin
+            self.logfile = open(os.path.join(self.logdir,self.logname), "w")
 
         self.logfile.write(time.ctime().split(" ")[3] + ">>"+ " ["+self.logtype+"] >> "+data+"\n")
         self.logfile.flush()
@@ -24,13 +58,25 @@ class logger(object):
 
 class client(object):
     def __init__(self, ip, port):
-        self.log = logger("client")
-        self.connect(ip, port)
+#        self.log = logger("client")
         self.ip = ip
         self.port = port
+        self.err = Error_Handler()
+        self.connect()
 
-    def connect(self, ip, port):
-        s.connect((ip, port))
+    def connect(self):
+        while 1:
+            try:
+                s.connect((self.ip, self.port))
+                break
+            except socket.error:
+                feedback = self.err.connect_error()
+                if not feedback:
+                    continue
+                    
+                else:
+                    self.ip = feedback[0]
+                    self.port = feedback[1]
 
     def listener(self):#serverdan gelen tum veriyi manupule eden kod blogu
         while 1:
@@ -56,6 +102,8 @@ class client(object):
 
         except socket.error:
             self.log.write("sockette meydana gelen hatadan dolayi paket gonderilemedi: "+data)
+
+    
 
 
 class gui(object):
@@ -102,9 +150,9 @@ class gui(object):
             if y == 0:
                 return False
         if y<=self.cur_y+self.max_y:
-            if y >= self.cur_y:
+            if y > self.cur_y:
                 if x<=self.cur_x + self.max_x:
-                    if x>= self.cur_x:
+                    if x> self.cur_x:
                         return True
         return False
         
@@ -372,9 +420,89 @@ class toolbar(object):
         self.tb.addstr(3,1,"(f)", self.yellow)
         self.tb.addstr(3,4,":Sec", self.bold)
         self.tb.refresh()
-        
+ 
+class Error_Handler(object):
+    def __init__(self):
+        self.menu = Menu_Screens()
 
-ekran = gui(40,25,7,40)
+    def connect_error(self):
+        os.system("clear")
+        print("\n\tSunucu Ile Baglanti Basarisiz")
+        print("\n\te\tTekrar Dene\n\tc\tBilgileri Tekrar Ayarla\n\tx\tCikis Yap")
+        while 1:
+            girdi = input(">>")
+            if not girdi in ["e", "c", "x"]:
+                continue
+                
+            if girdi == "e":
+                return False
+            if girdi == "c":
+                newconf = self.menu.connect_screen()
+                Handler_object.ip = newconf[0]
+                Handler_object.port = newconf[1]
+                Handler_object.conf.add("ip",newconf[0])
+                Handler_object.conf.add("port", newconf[1])
+                return False
+                
+            if girdi == "x":
+                os._exit(0)
+                
+
+class Menu_Screens(object):
+
+    def main_screen(self):
+        os.system("clear")
+        print("\n\n\tSocketGameClient\n\tCreated By:atlj\n\t\u001b[32mgithub.com/atlj\u001b[0m\n\tDevam etmek icin bir tusa basin")       
+        input("")
+        return menu.create(["Giris Yap", "Kayıt Ol","Ayarlar"])
+
+    def connect_screen(self):
+        connect_info = form.create("Sunucu Bilgileri", ["Adres", "Port"],"connect")            
+        self.ip = connect_info[0]
+        self.port = connect_info[1]
+        return [self.ip, self.port]
+        
+    def login_screen(self):
+        self.login_info = form.create("Giris Yap",["Kullanici Adi","Sifre"], "login")
+        return self.login_info
+
+       
+class Handler(object):
+    def __init__(self, gui_height, gui_width):
+        self.gui_height = gui_height
+        self.gui_width = gui_width
+        self.conf = config("GameClient Config.conf")
+        self.menu = Menu_Screens()
+        
+    def main(self):
+        choice = self.menu.main_screen()
+        if choice in [0, 1]:
+            if not self.conf.control():
+                os.system("clear")
+                print("\n\n\tHerhangi Bir Tanimli Sunucu Bulunamadi\n\tSunucu Yapilandirmaya Geciliyor\n\t\u001b[32mDevam Etmek İcin Enter'a Basin")
+                input("")
+                connect_info = self.menu.connect_screen() 
+                self.ip = connect_info[0]
+                self.port = connect_info[1]
+                self.conf.add("ip", self.ip)
+                self.conf.add("port", self.port)
+                self.sclient = client(self.ip, self.port)
+            else:
+                self.ip = self.conf.load()["ip"]
+                self.port = self.conf.load()["port"]
+                self.sclient = client(self.ip, self.port)
+        if choice == 0:#login
+            self.menu.login_screen()
+            
+        if choice == 1:#register
+            pass
+        if choice == 2:#config
+            pass
+        
+Handler_object = Handler(42, 18)
+Handler_object.main()
+
+ekran = gui(42,18,7,40)
 ekran.cur_y = 0
 ekran.cur_x = 0
 ekran.map = [{"x":1,"y":1,"marker":"V","quickinfo":["Kahraman Köyü","Level 278","babatek Klanı"]},{"x":51,"y":11,"marker":"C", "quickinfo":["Yalı Kampı","Level: 67","atesli_55 Klanı"]},{"x":5,"y":6,"marker":"M","quickinfo":["Pussydestroyer Madeni","Level 69", "Biricik Klanı"]},{"x":10, "y":10, "marker":"c","quickinfo":["Swagboyyolo Kampı","Level 100","Babatek Klanı"]}]
