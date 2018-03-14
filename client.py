@@ -428,9 +428,9 @@ class Error_Handler(object):
     def connect_error(self):
         os.system("clear")
         print("\n\tSunucu Ile Baglanti Basarisiz")
-        print("\n\te\tTekrar Dene\n\tc\tBilgileri Tekrar Ayarla\n\tx\tCikis Yap")
+        print("\n\te\tTekrar Dene\n\tc\tBilgileri Tekrar Ayarla\n\tx\tCikis Yap\n")
         while 1:
-            girdi = input(">>")
+            girdi = input("\t>>")
             if not girdi in ["e", "c", "x"]:
                 continue
                 
@@ -486,11 +486,11 @@ class Handler(object):
                 self.port = connect_info[1]
                 self.conf.add("ip", self.ip)
                 self.conf.add("port", self.port)
-                self.sclient = client(self.ip, self.port)
+                self.client = client(self.ip, self.port)
             else:
                 self.ip = self.conf.load()["ip"]
                 self.port = self.conf.load()["port"]
-                self.sclient = client(self.ip, self.port)
+                self.client = client(self.ip, self.port)
         if choice == 0:#login
             self.menu.login_screen()
             
