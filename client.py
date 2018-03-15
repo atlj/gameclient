@@ -16,6 +16,14 @@ class config(object):
         self.config_table[index] = data
         self.save(self.config_table)
         
+    def check_index(self, data):
+        try:
+            self.config_table[data]
+            return True
+            
+        except KeyError:
+            return False
+        
         
     def bsave(self, data):
         with open(os.path.join(self.directory,self.config_name), "wb") as dosya:
