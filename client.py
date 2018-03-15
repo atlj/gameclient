@@ -107,10 +107,10 @@ class client(object):
             try:
                 s.connect((self.ip, self.port))
                 self.state = "connected"
-                self.log.write("connection established")
+                self.log.write("Baglanti kuruldu")
                 break
             except socket.error:
-                self.log.write("couldn't connect to server")
+                self.log.write("Sunucuya baglanilamadi")
                 feedback = self.err.connect_error()
                 if not feedback:
                     continue
@@ -128,7 +128,7 @@ class client(object):
                 return package
             except socket.error:
                 self.err.connect_error_critic()
-                self.log.write("connection failed and exited due to it")
+                self.log.write("Tekli dinleme modunda baglanti basarisiz oldu ve program kapatildi")
                 os._exit(0)
 
     def listener(self):#serverdan gelen tum veriyi manupule eden kod blogu
@@ -137,7 +137,7 @@ class client(object):
             try:
                 message = s.recv(1024**2).decode("utf-8")
             except socket.error:
-                self.log.write("connection was cut")
+                self.log.write("Baglanti kesildi")
                 feedback = self.err.connect_error()
                 if not feedback:
                     continue
@@ -154,7 +154,8 @@ class client(object):
                 package = json.loads(message)
 
             except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
-                self.log.write("couldn't process data: "+message)
+                self.log.write("Veri islenemedi: "+message)
+                self.err.force_exit()
             
 
                 
