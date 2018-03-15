@@ -100,6 +100,8 @@ def create(formadi,liste, mode = "normal"):
                     liste2[2] = ""
                     continue
                     
+                return liste2
+                    
             if mode == "connect":
 
                 try:

@@ -1,4 +1,5 @@
 import socket, time, os, json, curses, form, menu
+from threading import Thread
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 cdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -69,11 +70,11 @@ class client(object):
         self.user = user
         self.passw = passw
         while 1:
-            self.send({"tag":"register", "data":[{"user":self.user, "passw":self.passw}]})
+            self.send({"tag":"register", "data":[{"user":self.user, "pass":self.passw}]})
             feedback = self.listen_once()
             if feedback["tag"] == "feedback":
                 if feedback["data"] == [True]:
-                    break
+                    return True
                 else:
                     feedback = self.err.register_error()
                     self.user = feedback[0]
@@ -82,6 +83,12 @@ class client(object):
             else:
                 self.log.write("serverdan beklenmedik paket alindi alinan paket: "+str(feedback))
                 self.err.force_exit()
+                
+    def positive_fb(self):
+        self.send({"tag":"feedback", "data":[True]})
+        
+    def negative_fb(self, data = [False]):
+        self.send({"tag":"feedback", "data":data})
                 
         
     def login(self, user, passw):
@@ -92,7 +99,7 @@ class client(object):
             feedback = self.listen_once()
             if feedback["tag"] == "feedback":
                 if feedback["data"] == [True]:
-                    break
+                    return True
                 else:
                     feedback = self.err.login_error()
                     self.user = feedback[0]
@@ -131,7 +138,7 @@ class client(object):
                 self.log.write("Tekli dinleme modunda baglanti basarisiz oldu ve program kapatildi")
                 os._exit(0)
 
-    def listener(self):#serverdan gelen tum veriyi manupule eden kod blogu
+    def listener(self):
 
         while 1:
             try:
@@ -146,19 +153,19 @@ class client(object):
                     self.port = feedback[1]
                     self.connect()
                     if self.state == "logged":
-                        self.login(self.user, self.passw)
+                        if self.login(self.user, self.passw):
+                            continue
                     
-                    
-
+                   
             try:
                 package = json.loads(message)
+                return package
 
             except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
                 self.log.write("Veri islenemedi: "+message)
                 self.err.force_exit()
             
-
-                
+                            
         
     def send(self, data):
         try:
@@ -555,10 +562,10 @@ class Error_Handler(object):
 class Menu_Screens(object):
 
     def main_screen(self):
-        os.system("clear")
-        print("\n\n\tSocketGameClient\n\tCreated By:atlj\n\t\u001b[32mgithub.com/atlj\u001b[0m\n\tDevam etmek icin bir tusa basin")       
-        input("")
         return menu.create(["Giris Yap", "Kayıt Ol","Ayarlar"])
+
+    def config_screen(self):
+        pass
 
     def connect_screen(self):
         connect_info = form.create("Sunucu Bilgileri", ["Adres", "Port"],"connect")            
@@ -583,6 +590,10 @@ class Handler(object):
         self.menu = Menu_Screens()
         
     def main(self):
+      os.system("clear")
+      print("\n\n\tSocketGameClient\n\tCreated By:atlj\n\t\u001b[32mgithub.com/atlj\u001b[0m\n\tDevam etmek icin bir tusa basin")       
+      input("")
+      while 1:
         choice = self.menu.main_screen()
         if choice in [0, 1]:
             if not self.conf.control():
@@ -603,16 +614,38 @@ class Handler(object):
             info = self.menu.login_screen()
             self.user = info[0]
             self.passw = info[1]
-            self.client.login(self.user, self.passw)
+            if self.client.login(self.user, self.passw):
+                self.runtime()#here we go
             
             
         if choice == 1:#register
-            info = self.menu.login_screen()
+            info = self.menu.register_screen()
             self.user = info[0]
             self.passw = info[1]
-            self.client.register(self.user, self.passw)
+            if self.client.register(self.user, self.passw):
+                os.system("clear")
+                print("\n\tBasari Ile Kayit Yapildi\n\tKullanici Adı Ve Sifreniz Ile\n\tGiris Yapabilirsiniz\n\tDevam Etmek Icin Enter'a Basın")
+                input("")
+                continue
+            
+            
         if choice == 2:#config
             pass
+            
+    def listen_handler(self):
+        while self.loopmode:
+            pass
+            
+    def add_thread(self, number =1):
+        for count in range(number):
+            t = Thread(target=self.listen_handler)
+            t.start()
+            
+    def runtime(self):
+        self.add_thread()
+        self.client.positive_fb()
+        #ilk olarak thread acilmasi gerekiyor.
+    
         
 Handler_object = Handler(42, 18)
 Handler_object.main()
