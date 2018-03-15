@@ -51,25 +51,66 @@ class logger(object):
         if not os.path.exists(os.path.join(self.logdir,self.logname)):#her logdan once dosya acmayi engellemek icin
             self.logfile = open(os.path.join(self.logdir,self.logname), "w")
 
-        self.logfile.write(time.ctime().split(" ")[3] + ">>"+ " ["+self.logtype+"] >> "+data+"\n")
+        self.logfile.write(time.ctime().split(" ")[3] + " >>"+ " ["+self.logtype+"] >> "+data+"\n")
         self.logfile.flush()
         os.fsync(self.logfile.fileno())#dosyayi kapatmadan verileri yazmak icin
 
 
 class client(object):
     def __init__(self, ip, port):
-#        self.log = logger("client")
+        self.log = logger("socket_client")
         self.ip = ip
         self.port = port
         self.err = Error_Handler()
+        self.state = "no-connection"
         self.connect()
-
+        
+    def register(self, user, passw):
+        self.user = user
+        self.passw = passw
+        while 1:
+            self.send({"tag":"register", "data":[{"user":self.user, "passw":self.passw}]})
+            feedback = self.listen_once()
+            if feedback["tag"] == "feedback":
+                if feedback["data"] == [True]:
+                    break
+                else:
+                    feedback = self.err.register_error()
+                    self.user = feedback[0]
+                    self.passw = feedback[1]
+                    continue
+            else:
+                self.log.write("serverdan beklenmedik paket alindi alinan paket: "+str(feedback))
+                self.err.force_exit()
+                
+        
+    def login(self, user, passw):
+        self.user = user
+        self.passw = passw
+        while 1:
+            self.send({"tag":"login", "data":[{"user":self.user, "pass":self.passw}]})
+            feedback = self.listen_once()
+            if feedback["tag"] == "feedback":
+                if feedback["data"] == [True]:
+                    break
+                else:
+                    feedback = self.err.login_error()
+                    self.user = feedback[0]
+                    self.passw = feedback[1]
+                    continue
+            else:
+                self.log.write("serverdan beklenmedik paket alindi alinan paket: "+str(feedback))
+                self.err.force_exit()
+                
     def connect(self):
         while 1:
             try:
                 s.connect((self.ip, self.port))
+                self.state = "connected"
+                self.log.write("connection established")
                 break
             except socket.error:
+                self.log.write("couldn't connect to server")
                 feedback = self.err.connect_error()
                 if not feedback:
                     continue
@@ -77,21 +118,46 @@ class client(object):
                 else:
                     self.ip = feedback[0]
                     self.port = feedback[1]
+                    
+    def listen_once(self):
+        while 1:
+            try:
+                message = s.recv(1024**2).decode("utf-8")
+                package = json.loads(message)
+                self.log.write("gelen veri >> "+str(package))
+                return package
+            except socket.error:
+                self.err.connect_error_critic()
+                self.log.write("connection failed and exited due to it")
+                os._exit(0)
 
     def listener(self):#serverdan gelen tum veriyi manupule eden kod blogu
+
         while 1:
             try:
                 message = s.recv(1024**2).decode("utf-8")
             except socket.error:
-                print("baglanti koptu")
-                self.log.write("baglanti koptu")
+                self.log.write("connection was cut")
+                feedback = self.err.connect_error()
+                if not feedback:
+                    continue
+                else:
+                    self.ip = feedback[0]
+                    self.port = feedback[1]
+                    self.connect()
+                    if self.state == "logged":
+                        self.login(self.user, self.passw)
+                    
+                    
 
             try:
                 package = json.loads(message)
 
             except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
-                self.log.write("veri islenemedi: "+message)
-            #TODO error handler classi acilabilir
+                self.log.write("couldn't process data: "+message)
+            
+
+                
         
     def send(self, data):
         try:
@@ -102,7 +168,7 @@ class client(object):
 
         except socket.error:
             self.log.write("sockette meydana gelen hatadan dolayi paket gonderilemedi: "+data)
-
+            #TODO edit here
     
 
 
@@ -424,10 +490,47 @@ class toolbar(object):
 class Error_Handler(object):
     def __init__(self):
         self.menu = Menu_Screens()
+        
+    def login_error(self):
+        os.system("clear")
+        print("\n\tGecersiz Girdi Bilgileri\n\n\tc\tBilgileri Tekrar Gir\n\te\tCikis Yap")
+        while 1:
+            girdi = input("\t>>")
+            if not girdi in ["e", "c"]:
+                continue
+            if girdi == "e":
+                os._exit(0)
+            if girdi == "c":
+                info = self.menu.login_screen()
+                
+    def register_error(self):
+        os.system("clear")
+        print("\n\tKullanici Adi Kullanimda\n\n\te\tCikis Yap\n\tc\tBilgileri Tekrar Gir")
+        while 1:
+            feedback = input("\t>>")
+            if not feedback in ["e", "c"]:
+                continue
+                
+            if feedback == "e":
+                return False
+                
+            if feedback == "c":
+                feedback = self.menu.register_screen()
+                return feedback
+                
+    def force_exit(self):
+        os.system("clear")
+        print("\n\tBeklenmedik Bir Hata Ile Karsilasildi\n\tProgram Kapatildi\n\tAyrintili Bilgi Icin Loglara Bakabilirsiniz.\n\tDevam Etmek Icin Enter'a Basin")
+        input("")
+        os._exit(0)
+        
+    def connect_error_critic(self):
+        os.system("clear")
+        print("\n\tSunucu Ile Baglanti Kurulamiyor\n\tProgramdan Cikis Yapilacak")
 
     def connect_error(self):
         os.system("clear")
-        print("\n\tSunucu Ile Baglanti Basarisiz")
+        print("\n\tSunucu Ile Baglanti Kurulamiyor")
         print("\n\te\tTekrar Dene\n\tc\tBilgileri Tekrar Ayarla\n\tx\tCikis Yap\n")
         while 1:
             girdi = input("\t>>")
@@ -442,7 +545,7 @@ class Error_Handler(object):
                 Handler_object.port = newconf[1]
                 Handler_object.conf.add("ip",newconf[0])
                 Handler_object.conf.add("port", newconf[1])
-                return False
+                return newconf
                 
             if girdi == "x":
                 os._exit(0)
@@ -465,6 +568,10 @@ class Menu_Screens(object):
     def login_screen(self):
         self.login_info = form.create("Giris Yap",["Kullanici Adi","Sifre"], "login")
         return self.login_info
+
+    def register_screen(self):
+        self.register_info = form.create("Kayit Ol", ["Kullanici Adi", "Sifre", "Sifre Tekrar"], "register")
+        return self.register_info
 
        
 class Handler(object):
@@ -492,10 +599,17 @@ class Handler(object):
                 self.port = self.conf.load()["port"]
                 self.client = client(self.ip, self.port)
         if choice == 0:#login
-            self.menu.login_screen()
+            info = self.menu.login_screen()
+            self.user = info[0]
+            self.passw = info[1]
+            self.client.login(self.user, self.passw)
+            
             
         if choice == 1:#register
-            pass
+            info = self.menu.login_screen()
+            self.user = info[0]
+            self.passw = info[1]
+            self.client.register(self.user, self.passw)
         if choice == 2:#config
             pass
         

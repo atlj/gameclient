@@ -81,6 +81,25 @@ def create(formadi,liste, mode = "normal"):
             if mode == "normal":
                 break
                 
+            if mode == "register":
+                user = liste2[0]
+                passw = liste2[1]
+                passw_control = liste2[2]
+                
+                if " " in user or " " in passw or " " in passw_control:
+                    continue
+                    
+                if user == "" or passw == "" or passw_control == "":
+                    continue
+                    
+                if not len(passw) >= 8:
+                    alertwindow("Sifreniz 8 Karakterden", "Buyuk Olmalidir") 
+                    
+                if not passw == passw_control:
+                    alertwindow("Girdiginiz Sifre Ile", "Tekrar Eslesmiyor")
+                    liste2[2] = ""
+                    continue
+                    
             if mode == "connect":
 
                 try:
