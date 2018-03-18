@@ -72,7 +72,6 @@ class client(object):
         self.port = port
         self.err = Error_Handler()
         self.state = "no-connection"
-        self.connect()
         
     def register(self, user, passw):
         self.user = user
@@ -120,10 +119,11 @@ class client(object):
     def connect(self):
         while 1:
             try:
+              if not self.state == "connected":
                 s.connect((self.ip, self.port))
                 self.state = "connected"
                 self.log.write("Baglanti kuruldu")
-                break
+              break
             except socket.error:
                 self.log.write("Sunucuya baglanilamadi")
                 feedback = self.err.connect_error()
@@ -279,9 +279,8 @@ class gui(object):
                     self.location_index = cache_count
                     self.selected = self.cache[cache_count]
                     
-    def placemenu(self, data):#g tusuna basinca acilan menunun kontrol edilmesi
+    def placemenu(self, data, width = 30):#genel amacli menu
         count = 0
-        width = 30
         cursor_pos = 1
         pagecount = 1
         itemcount = 0
@@ -289,7 +288,7 @@ class gui(object):
         page_count = 0
         cur_page = []
         cur_page_index = 0
-        for place in data:#tum lokasyonlari sayfalara gore siniflandirir
+        for place in data:#sayfalara gore siniflandirir
             count +=1
             itemcount += 1
             cur_page.append(place)
@@ -596,6 +595,7 @@ class Handler(object):
         self.gui_width = gui_width
         self.conf = config("GameClient Config.conf")
         self.menu = Menu_Screens()
+        self.client = False #yalnizca bir kere client tanimlamak icin
         
     def main(self):
       os.system("clear")
@@ -613,11 +613,15 @@ class Handler(object):
                 self.port = connect_info[1]
                 self.conf.add("ip", self.ip)
                 self.conf.add("port", self.port)
-                self.client = client(self.ip, self.port)
+                if not self.client:
+                    self.client = client(self.ip, self.port)
+                self.client.connect()
             else:
                 self.ip = self.conf.load()["ip"]
                 self.port = self.conf.load()["port"]
-                self.client = client(self.ip, self.port)
+                if not self.client:
+                    self.client = client(self.ip, self.port)
+                self.client.connect()
         if choice == 0:#login
             info = self.menu.login_screen()
             self.user = info[0]
@@ -631,9 +635,6 @@ class Handler(object):
             self.user = info[0]
             self.passw = info[1]
             if self.client.register(self.user, self.passw):
-                os.system("clear")
-                print("\n\tBasari Ile Kayit Yapildi\n\tKullanici Adı Ve Sifreniz Ile\n\tGiris Yapabilirsiniz\n\tDevam Etmek Icin Enter'a Basın")
-                input("")
                 continue
             
             
@@ -654,7 +655,8 @@ class Handler(object):
         self.client.positive_fb()
         #ilk olarak thread acilmasi gerekiyor.
     
-        
+
+    
 Handler_object = Handler(42, 18)
 Handler_object.main()
 

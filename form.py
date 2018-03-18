@@ -126,8 +126,8 @@ def create(formadi,liste, mode = "normal"):
                 
            
     screen.refresh()
-    curses.endwin()
     curses.echo()
+    curses.endwin()
     os.system("clear")
     return liste2
     
