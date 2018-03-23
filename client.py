@@ -1,7 +1,86 @@
 import socket, time, os, json, curses, form, menu
 from threading import Thread
+import pickle
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 cdir = os.path.dirname(os.path.realpath(__file__))
+
+
+
+class infopool(object):
+    def __init__(self, name):
+        self.name = name
+        self.log = logger(self.name+"pool")
+        self.pool = {}
+        self.info_ids = []
+
+    def getid(self):
+        while 1:
+            id = random.randint(1, 10**6)
+            if id in self.info_ids:
+                continue
+            info_ids.append(id)
+            return id
+            
+    def findbyid(self, data):
+        for info_id in self.pool:
+            if self.pool[info_id]["id"] == data["id"]:
+                return info_id
+        return False
+        
+    def add(self,id,  data):
+        self.pool[id] = data
+        
+    def replace(self,newid,  data):
+        old_id = self.findbyid(data)
+        if old_id:
+            del self.pool[old_id]
+        self.add(newid, data)
+        
+    def remove(self, data):
+        info_id = self.findbyid(data)
+        try:
+            del self.pool[info_id]
+ #           del self.info_ids[self.info_ids.index(info_id)]
+        except KeyError:
+            self.log.write("Veri, mevcut veritabaninda bulunmadigindan dolayi silinemedi: "+str(data))
+            
+        
+    def save(self):#pickle object dondurecek
+        savelist = {"pool":self.pool,  "info_ids":self.info_ids}
+        with open(os.path.join(cdir, "data.pickle"), "wb") as dosya:
+            pickle.dump(savelist, dosya)
+        
+    def load(self):#pickle object alicak
+        if os.path.exists(os.path.join(cdir, "data.pickle")):
+            with open(os.path.join(cdir, "data.pickle"), "rb") as dosya:
+                loadlist = pickle.load(dosya)
+            self.pool = loadlist["pool"]
+            self.info_ids = loadlist["info_ids"]
+        else:
+            self.log.write("data.pickle bulunamadigindan dolayi havuz yuklenemedi")
+"""        
+    def process(self, idlist):
+        local_idlist = []
+        replacelist = []
+        dellist = []
+        
+        for id in self.deletedpool:
+            if id in idlist:
+                dellist.append(id)
+                del idlist[idlist.index(id)]
+        
+        for id in self.pool:
+            local_idlist.append(id)
+            
+        for id in local_idlist:
+            if not id in idlist:
+                replacelist.append({id:self.pool[id]})
+                
+        feedback = {"replace":replacelist, 
+                    "delete":dellist}
+                    
+        return feedback
+"""
 
 class config(object):
     def __init__(self, config_name, directory = cdir):
@@ -88,7 +167,7 @@ class client(object):
                     self.passw = feedback[1]
                     continue
             else:
-                self.log.write("serverdan beklenmedik paket alindi alinan paket: "+str(feedback))
+                self.log.write("sunucudan beklenmedik paket alindi alinan paket: "+str(feedback))
                 self.err.force_exit()
                 
     def positive_fb(self):
@@ -146,7 +225,7 @@ class client(object):
                 self.log.write("Tekli dinleme modunda baglanti basarisiz oldu ve program kapatildi")
                 os._exit(0)
 
-    def listener(self):
+    def listen(self):
 
         while 1:
             try:
@@ -167,6 +246,7 @@ class client(object):
                    
             try:
                 package = json.loads(message)
+                package["tag"]
                 return package
 
             except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
@@ -517,6 +597,7 @@ class Error_Handler(object):
                 os._exit(0)
             if girdi == "c":
                 info = self.menu.login_screen()
+                return info
                 
     def register_error(self):
         os.system("clear")
@@ -595,6 +676,7 @@ class Handler(object):
         self.gui_width = gui_width
         self.conf = config("GameClient Config.conf")
         self.menu = Menu_Screens()
+        self.err = Error_Handler()
         self.client = False #yalnizca bir kere client tanimlamak icin
         
     def main(self):
@@ -643,7 +725,12 @@ class Handler(object):
             
     def listen_handler(self):
         while self.loopmode:
-            pass
+            feedback = self.client.listen()
+            tag = feedback["tag"]
+            data = feedback["data"]
+            
+            if tag == "":
+                pass
             
     def add_thread(self, number =1):
         for count in range(number):
@@ -656,7 +743,7 @@ class Handler(object):
         #ilk olarak thread acilmasi gerekiyor.
     
 
-    
+"""    
 Handler_object = Handler(42, 18)
 Handler_object.main()
 
@@ -668,5 +755,5 @@ def map_sort(data):
     return data["quickinfo"][0]
 ekran.map = sorted(ekran.map, key=map_sort)
 ekran.printmap()
-
+"""
 
