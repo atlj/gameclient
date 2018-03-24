@@ -47,40 +47,17 @@ class infopool(object):
         
     def save(self):#pickle object dondurecek
         savelist = {"pool":self.pool,  "info_ids":self.info_ids}
-        with open(os.path.join(cdir, "data.pickle"), "wb") as dosya:
+        with open(os.path.join(cdir,self.name+ ".pooldata"), "wb") as dosya:
             pickle.dump(savelist, dosya)
         
     def load(self):#pickle object alicak
-        if os.path.exists(os.path.join(cdir, "data.pickle")):
-            with open(os.path.join(cdir, "data.pickle"), "rb") as dosya:
+        if os.path.exists(os.path.join(cdir, self.name+".pooldata")):
+            with open(os.path.join(cdir,self.name+ ".pooldata"), "rb") as dosya:
                 loadlist = pickle.load(dosya)
             self.pool = loadlist["pool"]
             self.info_ids = loadlist["info_ids"]
         else:
-            self.log.write("data.pickle bulunamadigindan dolayi havuz yuklenemedi")
-"""        
-    def process(self, idlist):
-        local_idlist = []
-        replacelist = []
-        dellist = []
-        
-        for id in self.deletedpool:
-            if id in idlist:
-                dellist.append(id)
-                del idlist[idlist.index(id)]
-        
-        for id in self.pool:
-            local_idlist.append(id)
-            
-        for id in local_idlist:
-            if not id in idlist:
-                replacelist.append({id:self.pool[id]})
-                
-        feedback = {"replace":replacelist, 
-                    "delete":dellist}
-                    
-        return feedback
-"""
+            self.log.write(self.name+".pooldata dosyasi bulunamadigindan dolayi havuz yuklenemedi havuz: "+self.name)
 
 class config(object):
     def __init__(self, config_name, directory = cdir):
@@ -103,11 +80,6 @@ class config(object):
         except KeyError:
             return False
         
-        
-    def bsave(self, data):
-        with open(os.path.join(self.directory,self.config_name), "wb") as dosya:
-            dosya.write(data)
-            
     def load(self):
         with open(os.path.join(self.directory,self.config_name), "r") as dosya:
            return json.load(dosya)
@@ -669,7 +641,10 @@ class Menu_Screens(object):
         self.register_info = form.create("Kayit Ol", ["Kullanici Adi", "Sifre", "Sifre Tekrar"], "register")
         return self.register_info
 
-       
+    def name_screen(self):
+        self.name_info = form.create("Kalenizin Adini Belirleyin", ["Koy Ismi"],"getname")
+        return self.name_info[0]
+
 class Handler(object):
     def __init__(self, gui_height, gui_width):
         self.gui_height = gui_height
@@ -729,8 +704,16 @@ class Handler(object):
             tag = feedback["tag"]
             data = feedback["data"]
             
-            if tag == "":
-                pass
+            if tag == "register_info":
+                while 1:
+                    feedback = menu.name_screen()
+                    self.client.send({"tag":"register_feedback", "data":[feedback]})
+                    feedback = self.client.listen()
+                    
+                    if False in feedback["data"]:
+                        menu.create(["Kale Adi Kullanimda"])
+                        continue
+                    break
             
     def add_thread(self, number =1):
         for count in range(number):
@@ -743,7 +726,6 @@ class Handler(object):
         #ilk olarak thread acilmasi gerekiyor.
     
 
-"""    
 Handler_object = Handler(42, 18)
 Handler_object.main()
 
@@ -755,5 +737,4 @@ def map_sort(data):
     return data["quickinfo"][0]
 ekran.map = sorted(ekran.map, key=map_sort)
 ekran.printmap()
-"""
 

@@ -111,10 +111,13 @@ def create(formadi,liste, mode = "normal"):
                    alertwindow("Port Degeri", "Bir Sayi Olmali")
                    liste2[1] = ""
                    continue
-                
+            if mode == "getname":
+                if not len(liste2[0]) >= 4:
+                    alertwindow("Seciceginiz Isim En Az", "4 Karakterden Olusmalidir")
+
             if mode == "login":
                 if not len(liste2[0])>=4:                    
-                    alertwindow("Kullanici Adi En Az", "3 Karakterden Olusmali")
+                    alertwindow("Kullanici Adi En Az", "4 Karakterden Olusmali")
                     liste2[0] = ""
                     continue
                 
