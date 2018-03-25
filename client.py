@@ -154,7 +154,7 @@ class client(object):
         self.passw = passw
         while 1:
             self.send({"tag":"login", "data":[{"user":self.user, "pass":self.passw}]})
-            feedback = self.listen_once()
+            feedback = self.listen_once(35)
             if feedback["tag"] == "feedback":
                 if feedback["data"] == [True]:
                     return True
@@ -164,7 +164,7 @@ class client(object):
                     self.passw = feedback[1]
                     continue
             else:
-                self.log.write("serverdan beklenmedik paket alindi alinan paket: "+str(feedback))
+                self.log.write("giris yapilirken sunucudan beklenmedik paket alindi alinan paket: "+str(feedback))
                 self.err.force_exit()
                 
     def connect(self):
@@ -185,10 +185,10 @@ class client(object):
                     self.ip = feedback[0]
                     self.port = feedback[1]
                     
-    def listen_once(self):
+    def listen_once(self, buff=1024**2):
         while 1:
             try:
-                message = s.recv(1024**2).decode("utf-8")
+                message = s.recv(buff).decode("utf-8")
                 package = json.loads(message)
                 self.log.write("gelen veri >> "+str(package))
                 return package
@@ -196,6 +196,8 @@ class client(object):
                 self.err.connect_error_critic()
                 self.log.write("Tekli dinleme modunda baglanti basarisiz oldu ve program kapatildi")
                 os._exit(0)
+            except json.decoder.JSONDecodeError:
+                self.log.write("Tekli dinleme modunda JSON decode basarisiz oldu paket: "+str(message))
 
     def listen(self):
 
@@ -642,7 +644,7 @@ class Menu_Screens(object):
         return self.register_info
 
     def name_screen(self):
-        self.name_info = form.create("Kalenizin Adini Belirleyin", ["Koy Ismi"],"getname")
+        self.name_info = form.create("Kalenizin Adini Belirleyin", ["Kale Ismi"],"getname")
         return self.name_info[0]
 
 class Handler(object):
@@ -673,12 +675,14 @@ class Handler(object):
                 if not self.client:
                     self.client = client(self.ip, self.port)
                 self.client.connect()
+            
             else:
                 self.ip = self.conf.load()["ip"]
                 self.port = self.conf.load()["port"]
                 if not self.client:
                     self.client = client(self.ip, self.port)
                 self.client.connect()
+        
         if choice == 0:#login
             info = self.menu.login_screen()
             self.user = info[0]
@@ -704,16 +708,9 @@ class Handler(object):
             tag = feedback["tag"]
             data = feedback["data"]
             
-            if tag == "register_info":
-                while 1:
-                    feedback = menu.name_screen()
-                    self.client.send({"tag":"register_feedback", "data":[feedback]})
-                    feedback = self.client.listen()
-                    
-                    if False in feedback["data"]:
-                        menu.create(["Kale Adi Kullanimda"])
-                        continue
-                    break
+            if tag == "":
+                pass
+
             
     def add_thread(self, number =1):
         for count in range(number):
@@ -727,6 +724,7 @@ class Handler(object):
     
 
 Handler_object = Handler(42, 18)
+Handler_object.loopmode = True
 Handler_object.main()
 
 ekran = gui(42,18,7,40)
