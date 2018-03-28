@@ -252,6 +252,8 @@ class gui(object):
         curses.start_color() #curses renkleri
         curses.init_pair(10, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(11, curses.COLOR_YELLOW,curses.COLOR_BLACK)
+        curses.init_pair(12, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        self.white = curses.color_pair(12)
         self.yellow = curses.color_pair(11)
         self.green = curses.color_pair(10)
         self.bold = curses.A_BOLD
@@ -266,6 +268,76 @@ class gui(object):
         for location in self.map:
             if location["y"] == line:
                 self.ycache.append(location)
+
+    def alert(self, text, **kwargs):
+        #ozellikleri ayarlayan kisim
+        linecount = 0
+        if not isinstance(text, list):
+            text = [text]
+        if not "pro_text" in kwargs:
+            pro_text = ["Devam Etmek Icin", "Bir Tusa Basin"]
+        else:
+            pro_text = kwargs["pro_text"]
+        textlist = []
+        for line in text:
+            linecount += 1
+            textlist.append(len(line))
+        for line in pro_text:
+            linecount += 1
+            textlist.append(len(line))
+
+        if not "x" in kwargs:
+            x = int(self.max_x/2)-int(max_len/2)
+        else:
+            x = kwargs["x"]
+
+        if not "y" in kwargs:
+            y = int(self.max_y/2)-int(linecount/2+2)
+        else:
+            y = kwargs["y"]
+
+        if not "size_y" in kwargs:
+            size_y = linecount + 4
+        else:
+            size_y = kwargs["size_y"]
+
+        if not "size_x" in kwargs:
+            size_x = max(textlist)+4
+        else:
+            size_x = kwargs["size_x"]
+
+        if not "color" in kwargs:
+            color = self.white
+        else:
+            color = kwargs["color"]
+
+        if not "pro_color" in kwargs:
+            pro_color = self.green
+        else:
+            pro_color = kwargs["pro_color"]
+
+
+        win = curses.newwin(size_y, size_x, y, x)
+        win.border(0)
+        while 1:
+
+            count = 1
+            for line in text:
+                win.addstr(count, 2, line, color)
+                count += 1
+
+            for line in pro_text:
+                win.addstr(count+1, 2, line, pro_color)
+                count += 1
+            win.refresh()
+            curses.noecho()
+            self.screen.keypad(True)
+            win.getkey(count +1, 1)#edit here
+            curses.echo()
+            self.screen.keypad(False)
+            break
+
+
 
     def getline(self, x):#satirlarin icerigine gore cikti gonderir
 
@@ -722,12 +794,15 @@ class Handler(object):
         self.client.positive_fb()
         #ilk olarak thread acilmasi gerekiyor.
     
+"""
 
 Handler_object = Handler(42, 18)
 Handler_object.loopmode = True
 Handler_object.main()
+"""
 
 ekran = gui(42,18,7,40)
+
 ekran.cur_y = 0
 ekran.cur_x = 0
 ekran.map = [{"x":1,"y":1,"marker":"V","quickinfo":["Kahraman Köyü","Level 278","babatek Klanı"]},{"x":51,"y":11,"marker":"C", "quickinfo":["Yalı Kampı","Level: 67","atesli_55 Klanı"]},{"x":5,"y":6,"marker":"M","quickinfo":["Pussydestroyer Madeni","Level 69", "Biricik Klanı"]},{"x":10, "y":10, "marker":"c","quickinfo":["Swagboyyolo Kampı","Level 100","Babatek Klanı"]}]
@@ -736,3 +811,5 @@ def map_sort(data):
 ekran.map = sorted(ekran.map, key=map_sort)
 ekran.printmap()
 
+ekran.alert(["BU BIR UYARI", "PENCERESIDIR"])
+curses.endwin()
