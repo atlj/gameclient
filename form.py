@@ -67,13 +67,9 @@ def create(formadi,liste, mode = "normal"):
         if getkey == "e":
             select = 1
         if getkey == "c":
-            if liste2[0] == "" or liste2[1] == "":
-                continue
             if liste2[0] =="________":
                 continue
                 
-            if liste2[1] =="________":
-                continue
                 
             if " " in liste2[0] or " " in liste2[1]:
                 continue
@@ -82,6 +78,8 @@ def create(formadi,liste, mode = "normal"):
                 break
                 
             if mode == "register":
+                if liste2[1] =="________":
+                    continue
                 user = liste2[0]
                 passw = liste2[1]
                 passw_control = liste2[2]
@@ -100,10 +98,11 @@ def create(formadi,liste, mode = "normal"):
                     liste2[2] = ""
                     continue
                     
-                return liste2
+                break
                     
             if mode == "connect":
-
+                if liste2[1] =="________":
+                    continue
                 try:
                    liste2[1] = int(liste2[1])
                    break
@@ -114,8 +113,10 @@ def create(formadi,liste, mode = "normal"):
             if mode == "getname":
                 if not len(liste2[0]) >= 4:
                     alertwindow("Seciceginiz Isim En Az", "4 Karakterden Olusmalidir")
-
+                break
             if mode == "login":
+                if liste2[1] =="________":
+                    continue
                 if not len(liste2[0])>=4:                    
                     alertwindow("Kullanici Adi En Az", "4 Karakterden Olusmali")
                     liste2[0] = ""

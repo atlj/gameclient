@@ -9,7 +9,7 @@ cdir = os.path.dirname(os.path.realpath(__file__))
 class infopool(object):
     def __init__(self, name):
         self.name = name
-        self.log = logger(self.name+"pool")
+        self.log = logger(self.name+" pool")
         self.pool = {}
         self.info_ids = []
 
@@ -18,7 +18,7 @@ class infopool(object):
             id = random.randint(1, 10**6)
             if id in self.info_ids:
                 continue
-            info_ids.append(id)
+            self.info_ids.append(id)
             return id
             
     def findbyid(self, data):
@@ -28,14 +28,20 @@ class infopool(object):
         return False
         
     def add(self,id,  data):
-        self.pool[id] = data
-        
+        self.pool[id] = data 
+    
     def replace(self,newid,  data):
         old_id = self.findbyid(data)
         if old_id:
             del self.pool[old_id]
         self.add(newid, data)
-        
+    
+    def sum_ids(self):
+        idlist = []
+        for id in self.pool:
+            idlist.append(id)
+        return idlist
+
     def remove(self, data):
         info_id = self.findbyid(data)
         try:
@@ -43,7 +49,12 @@ class infopool(object):
  #           del self.info_ids[self.info_ids.index(info_id)]
         except KeyError:
             self.log.write("Veri, mevcut veritabaninda bulunmadigindan dolayi silinemedi: "+str(data))
-            
+    
+    def sum(self):
+        liste = []
+        for element in self.pool:
+            liste.append(self.pool[element])
+        return liste
         
     def save(self):#pickle object dondurecek
         savelist = {"pool":self.pool,  "info_ids":self.info_ids}
@@ -99,7 +110,7 @@ class config(object):
 
 class logger(object):
     def __init__(self, logtype):
-        self.logname = logtype +"log" + " "+time.ctime()
+        self.logname = logtype +"log" + " "+time.ctime()+".log"
         self.logdir = os.path.join(cdir, "logs")
         self.logtype = logtype
 
@@ -221,6 +232,7 @@ class client(object):
             try:
                 package = json.loads(message)
                 package["tag"]
+                self.log.write("gelen veri >> "+str(package))
                 return package
 
             except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
@@ -248,6 +260,8 @@ class gui(object):
         self.log = logger("gui")
         self.max_x = max_x
         self.max_y = max_y
+        self.cur_y = 0
+        self.cur_x = 0#to edited
         self.screen = curses.initscr()
         curses.start_color() #curses renkleri
         curses.init_pair(10, curses.COLOR_GREEN, curses.COLOR_BLACK)
@@ -727,7 +741,8 @@ class Handler(object):
         self.menu = Menu_Screens()
         self.err = Error_Handler()
         self.client = False #yalnizca bir kere client tanimlamak icin
-        
+        self.genericpool = infopool("genericpool") 
+        self.genericpool.load()
     def main(self):
       os.system("clear")
       print("\n\n\tSocketGameClient\n\tCreated By:atlj\n\t\u001b[32mgithub.com/atlj\u001b[0m\n\tDevam etmek icin bir tusa basin")       
@@ -778,8 +793,14 @@ class Handler(object):
             tag = feedback["tag"]
             data = feedback["data"]
             
-            if tag == "":
-                pass
+            if tag == "sync_feedback":
+                for element in data[0]["generic"]["replace"]:
+                    for obj in element:
+                        self.genericpool.replace(obj, element[obj])
+                        self.genericpool.save()
+                for element in data[0]["generic"]["delete"]:
+                    self.genericpool.remove(element)
+                    self.genericpool.save()
 
     def add_thread(self, number =1):
         for count in range(number):
@@ -803,8 +824,10 @@ class Handler(object):
         self.client.positive_fb()#hata verebilir
         self.control()
         self.add_thread()
-        self.gui = gui(self.height, self.width, 7, 40)#burdaki harcode sikinti yapablir
-        
+        self.client.send({"tag":"sync", "data":[["generic"], {"generic_idlist":self.genericpool.sum_ids()}]})
+        self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
+        self.gui.map = self.genericpool.sum()
+        self.gui.printmap()
     
 
 
