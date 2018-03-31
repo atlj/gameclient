@@ -762,14 +762,12 @@ class Handler(object):
             if self.client.login(self.user, self.passw):
                 self.runtime()#here we go
             
-            
         if choice == 1:#register
             info = self.menu.register_screen()
             self.user = info[0]
             self.passw = info[1]
             if self.client.register(self.user, self.passw):
                 continue
-            
             
         if choice == 2:#config
             pass
@@ -783,24 +781,38 @@ class Handler(object):
             if tag == "":
                 pass
 
-            
     def add_thread(self, number =1):
         for count in range(number):
             t = Thread(target=self.listen_handler)
             t.start()
-            
+
+    def control(self):
+        self.client.send({"tag":"user_control", "data":[]})
+        fb = self.client.listen_once()
+        if False in fb["data"]:
+            #Kale adi belirleme
+            while 1:
+                cr = self.menu.name_screen()
+                self.client.send({"tag":"register_info", "data":[cr[0]]})#burayi kontrol et
+                fb = self.client.listen_once()
+                if fb["data"] == [False]:
+                    continue
+                break
+
     def runtime(self):
+        self.client.positive_fb()#hata verebilir
+        self.control()
         self.add_thread()
-        self.client.positive_fb()
-        #ilk olarak thread acilmasi gerekiyor.
+        self.gui = gui(self.height, self.width, 7, 40)#burdaki harcode sikinti yapablir
+        
     
-"""
+
 
 Handler_object = Handler(42, 18)
 Handler_object.loopmode = True
 Handler_object.main()
-"""
 
+"""
 ekran = gui(42,18,7,40)
 
 ekran.cur_y = 0
@@ -810,6 +822,4 @@ def map_sort(data):
     return data["quickinfo"][0]
 ekran.map = sorted(ekran.map, key=map_sort)
 ekran.printmap()
-
-ekran.alert(["BU BIR UYARI", "PENCERESIDIR"])
-curses.endwin()
+"""
