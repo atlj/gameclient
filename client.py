@@ -830,10 +830,10 @@ class Handler(object):
         self.gui.printmap()
     
 
-
-Handler_object = Handler(42, 18)
-Handler_object.loopmode = True
-Handler_object.main()
+if __name__ == "__main__":
+    Handler_object = Handler(42, 18)
+    Handler_object.loopmode = True
+    Handler_object.main()
 
 """
 ekran = gui(42,18,7,40)
