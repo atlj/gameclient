@@ -20,22 +20,22 @@ class infopool(object):
                 continue
             self.info_ids.append(id)
             return id
-            
+
     def findbyid(self, data):
         for info_id in self.pool:
             if self.pool[info_id]["id"] == data["id"]:
                 return info_id
         return False
-        
+
     def add(self,id,  data):
-        self.pool[id] = data 
-    
+        self.pool[id] = data
+
     def replace(self,newid,  data):
         old_id = self.findbyid(data)
         if old_id:
             del self.pool[old_id]
         self.add(newid, data)
-    
+
     def sum_ids(self):
         idlist = []
         for id in self.pool:
@@ -49,18 +49,18 @@ class infopool(object):
  #           del self.info_ids[self.info_ids.index(info_id)]
         except KeyError:
             self.log.write("Veri, mevcut veritabaninda bulunmadigindan dolayi silinemedi: "+str(data))
-    
+
     def sum(self):
         liste = []
         for element in self.pool:
             liste.append(self.pool[element])
         return liste
-        
+
     def save(self):#pickle object dondurecek
         savelist = {"pool":self.pool,  "info_ids":self.info_ids}
         with open(os.path.join(cdir,self.name+ ".pooldata"), "wb") as dosya:
             pickle.dump(savelist, dosya)
-        
+
     def load(self):#pickle object alicak
         if os.path.exists(os.path.join(cdir, self.name+".pooldata")):
             with open(os.path.join(cdir,self.name+ ".pooldata"), "rb") as dosya:
@@ -78,31 +78,31 @@ class config(object):
             self.config_table = self.load()
         else:
             self.config_table = {}
-            
+
     def add(self, index, data):
         self.config_table[index] = data
         self.save(self.config_table)
-        
+
     def check_index(self, data):
         try:
             self.config_table[data]
             return True
-            
+
         except KeyError:
             return False
-        
+
     def load(self):
         with open(os.path.join(self.directory,self.config_name), "r") as dosya:
            return json.load(dosya)
-        
+
     def save(self, data):
         with open(os.path.join(self.directory,self.config_name), "w") as dosya:
             json.dump(data, dosya)
-            
+
     def delete(self):
         os.remove(os.path.join(self.directory,self.config_name))
         self.config.table = {}
-        
+
     def control(self):
         if os.path.exists(os.path.join(self.directory,self.config_name)):
            return True
@@ -115,10 +115,10 @@ class logger(object):
         self.logtype = logtype
 
     def write(self, data):
-        
+
         if not os.path.exists(self.logdir):
             os.makedirs(self.logdir)
-        
+
         if not os.path.exists(os.path.join(self.logdir,self.logname)):#her logdan once dosya acmayi engellemek icin
             self.logfile = open(os.path.join(self.logdir,self.logname), "w")
 
@@ -134,7 +134,7 @@ class client(object):
         self.port = port
         self.err = Error_Handler()
         self.state = "no-connection"
-        
+
     def register(self, user, passw):
         self.user = user
         self.passw = passw
@@ -152,14 +152,14 @@ class client(object):
             else:
                 self.log.write("sunucudan beklenmedik paket alindi alinan paket: "+str(feedback))
                 self.err.force_exit()
-                
+
     def positive_fb(self):
         self.send({"tag":"feedback", "data":[True]})
-        
+
     def negative_fb(self, data = [False]):
         self.send({"tag":"feedback", "data":data})
-                
-        
+
+
     def login(self, user, passw):
         self.user = user
         self.passw = passw
@@ -177,7 +177,7 @@ class client(object):
             else:
                 self.log.write("giris yapilirken sunucudan beklenmedik paket alindi alinan paket: "+str(feedback))
                 self.err.force_exit()
-                
+
     def connect(self):
         while 1:
             try:
@@ -191,11 +191,11 @@ class client(object):
                 feedback = self.err.connect_error()
                 if not feedback:
                     continue
-                    
+
                 else:
                     self.ip = feedback[0]
                     self.port = feedback[1]
-                    
+
     def listen_once(self, buff=1024**2):
         while 1:
             try:
@@ -227,8 +227,8 @@ class client(object):
                     if self.state == "logged":
                         if self.login(self.user, self.passw):
                             continue
-                    
-                   
+
+
             try:
                 package = json.loads(message)
                 package["tag"]
@@ -238,9 +238,9 @@ class client(object):
             except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
                 self.log.write("Veri islenemedi: "+message)
                 self.err.force_exit()
-            
-                            
-        
+
+
+
     def send(self, data):
         try:
             s.send(bytes(json.dumps(data), "utf-8"))
@@ -251,7 +251,7 @@ class client(object):
         except socket.error:
             self.log.write("sockette meydana gelen hatadan dolayi paket gonderilemedi: "+data)
             #TODO edit here
-    
+
 
 
 class gui(object):
@@ -364,7 +364,7 @@ class gui(object):
                     return location["marker"]
                 else:
                     return "_"
-                    
+
     def is_showed(self, location):#world mapte f ye basinca lokasyonu ekranda mi diye kontrol eder
         x = location["x"]
         y = location["y"]
@@ -377,7 +377,7 @@ class gui(object):
                     if x> self.cur_x:
                         return True
         return False
-        
+
     def select(self, direction):#q ve e tuslarinin secim yapmasi
         ycache2 = []
         self.cache = []
@@ -386,7 +386,7 @@ class gui(object):
             if location["y"] <= self.cur_y + self.max_y:
                 if location["y"] > self.cur_y:
                     ycache2.append(location)
-        
+
         if not ycache2 == []:#daha sonra satirlari isliyor
             for location in ycache2:
                 if location["x"] <= self.cur_x+self.max_x:
@@ -397,7 +397,7 @@ class gui(object):
         def sort_key(data):#son olarak x e gore tekrar siraliyor
             return data["x"]
         self.cache = sorted(self.cache, key=sort_key)
-        
+
         if direction == "next":#e tusu
             if not self.cache == []:
                 self.location_index += 1
@@ -418,7 +418,7 @@ class gui(object):
                 except IndexError:
                     self.location_index = cache_count
                     self.selected = self.cache[cache_count]
-                    
+
     def placemenu(self, data, width = 30):#genel amacli menu
         count = 0
         cursor_pos = 1
@@ -449,7 +449,7 @@ class gui(object):
 
         if count > self.max_y:
             count = self.max_y
-            
+
         menu = curses.newwin(count +2, width, 1, int(self.max_x/2)-int(width/2))
         while 1:
             menu.clear()
@@ -460,11 +460,11 @@ class gui(object):
                 else:
                     menu.addstr(ndx, 1, place["quickinfo"][0])
                 ndx += 1
-            
+
             self.tb.placemenu_tb()
             menu.border(0)
             menu.refresh()
-        
+
             curses.noecho()
             self.screen.keypad(True)
             getkey = self.screen.getkey(self.max_y+1, 1)
@@ -501,11 +501,11 @@ class gui(object):
                     else:
                         cursor_pos += 1
             if getkey == "f":
-                return cursor_pos + cur_page_index * self.max_y 
+                return cursor_pos + cur_page_index * self.max_y
 
-        return False 
-        
-        
+        return False
+
+
     def minimenu(self, data):
         width = 25
         count = 5
@@ -513,11 +513,11 @@ class gui(object):
             x = data["x"] -self.cur_x- width -1
         else:
             x = data["x"]-self.cur_x +2
-        
+
         if data["y"]-self.cur_y >  self.cur_y + self.max_y - data["y"]:
             y = data["y"] -self.cur_y - int(count/2)
         else:
-            y = data["y"]-self.cur_y 
+            y = data["y"]-self.cur_y
         menu = curses.newwin(count, width,y,x)
         menu.border(0)
         ndx = 1
@@ -534,8 +534,9 @@ class gui(object):
             self.screen.keypad(False)
             if getkey == "f":
                 break
-        
-        
+
+    def playermenu():
+        pass
 
     def printmap(self):#Dunya haritasini ekrana yazdirir
         while 1:
@@ -564,7 +565,7 @@ class gui(object):
             getkey = self.screen.getkey(self.max_y+1, 1)
             curses.echo()
             self.screen.keypad(False)
-          
+
             if getkey == "q":
                 self.select("back")
 
@@ -584,7 +585,7 @@ class gui(object):
 
             if getkey == "s":
                 self.cur_y +=1
-                
+
             if getkey == "g":
                 highlighted = self.placemenu(self.map)
                 if highlighted:
@@ -600,11 +601,13 @@ class gui(object):
                     else:
                         self.cur_y = 0
 
-                
+
             if getkey == "f":
                 if self.is_showed(self.selected):
                     self.minimenu(self.selected)
-                
+
+            if getkey == "p":
+                pass
 class toolbar(object):
 
     def __init__(self, toolbar_height,toolbar_width, max_y):
@@ -624,14 +627,16 @@ class toolbar(object):
         self.tb.addstr(3,4,":Bilgileri Goster",self.bold)
         self.tb.addstr(4,1,"(g)", self.yellow)
         self.tb.addstr(4,4,":Mekan Listesi",self.bold)
+        self.tb.addstr(5,1, "(p)", self.yellow)
+        self.tb.addstr(5,4, ":Kale Menusu", self.bold)
         self.tb.refresh()
-        
+
     def quick_info_tb(self):
         self.tb.clear()
         self.tb.addstr(1,1,"(f)",self.yellow)
         self.tb.addstr(1,4,":Pencereyi Kapat",self.bold)
         self.tb.refresh()
-        
+
     def placemenu_tb(self):
         self.tb.clear()
         self.tb.addstr(1,1,"(g)",self.yellow)
@@ -641,11 +646,11 @@ class toolbar(object):
         self.tb.addstr(3,1,"(f)", self.yellow)
         self.tb.addstr(3,4,":Sec", self.bold)
         self.tb.refresh()
- 
+
 class Error_Handler(object):
     def __init__(self):
         self.menu = Menu_Screens()
-        
+
     def login_error(self):
         os.system("clear")
         print("\n\tGecersiz Girdi Bilgileri\n\n\tc\tBilgileri Tekrar Gir\n\te\tCikis Yap")
@@ -658,7 +663,7 @@ class Error_Handler(object):
             if girdi == "c":
                 info = self.menu.login_screen()
                 return info
-                
+
     def register_error(self):
         os.system("clear")
         print("\n\tKullanici Adi Kullanimda\n\n\te\tCikis Yap\n\tc\tBilgileri Tekrar Gir")
@@ -666,20 +671,20 @@ class Error_Handler(object):
             feedback = input("\t>>")
             if not feedback in ["e", "c"]:
                 continue
-                
+
             if feedback == "e":
                 return False
-                
+
             if feedback == "c":
                 feedback = self.menu.register_screen()
                 return feedback
-                
+
     def force_exit(self):
         os.system("clear")
         print("\n\tBeklenmedik Bir Hata Ile Karsilasildi\n\tProgram Kapatildi\n\tAyrintili Bilgi Icin Loglara Bakabilirsiniz.\n\tDevam Etmek Icin Enter'a Basin")
         input("")
         os._exit(0)
-        
+
     def connect_error_critic(self):
         os.system("clear")
         print("\n\tSunucu Ile Baglanti Kurulamiyor\n\tProgramdan Cikis Yapilacak")
@@ -692,7 +697,7 @@ class Error_Handler(object):
             girdi = input("\t>>")
             if not girdi in ["e", "c", "x"]:
                 continue
-                
+
             if girdi == "e":
                 return False
             if girdi == "c":
@@ -702,10 +707,10 @@ class Error_Handler(object):
                 Handler_object.conf.add("ip",newconf[0])
                 Handler_object.conf.add("port", newconf[1])
                 return newconf
-                
+
             if girdi == "x":
                 os._exit(0)
-                
+
 
 class Menu_Screens(object):
 
@@ -716,11 +721,11 @@ class Menu_Screens(object):
         pass
 
     def connect_screen(self):
-        connect_info = form.create("Sunucu Bilgileri", ["Adres", "Port"],"connect")            
+        connect_info = form.create("Sunucu Bilgileri", ["Adres", "Port"],"connect")
         self.ip = connect_info[0]
         self.port = connect_info[1]
         return [self.ip, self.port]
-        
+
     def login_screen(self):
         self.login_info = form.create("Giris Yap",["Kullanici Adi","Sifre"], "login")
         return self.login_info
@@ -741,11 +746,14 @@ class Handler(object):
         self.menu = Menu_Screens()
         self.err = Error_Handler()
         self.client = False #yalnizca bir kere client tanimlamak icin
-        self.genericpool = infopool("genericpool") 
+        self.genericpool = infopool("genericpool")
         self.genericpool.load()
+        self.playerpool = infopool("playerpool")
+        self.playerpool.load()
+
     def main(self):
       os.system("clear")
-      print("\n\n\tSocketGameClient\n\tCreated By:atlj\n\t\u001b[32mgithub.com/atlj\u001b[0m\n\tDevam etmek icin bir tusa basin")       
+      print("\n\n\tSocketGameClient\n\tCreated By:atlj\n\t\u001b[32mgithub.com/atlj\u001b[0m\n\tDevam etmek icin bir tusa basin")
       input("")
       while 1:
         choice = self.menu.main_screen()
@@ -754,7 +762,7 @@ class Handler(object):
                 os.system("clear")
                 print("\n\n\tHerhangi Bir Tanimli Sunucu Bulunamadi\n\tSunucu Yapilandirmaya Geciliyor\n\t\u001b[32mDevam Etmek İcin Enter'a Basin")
                 input("")
-                connect_info = self.menu.connect_screen() 
+                connect_info = self.menu.connect_screen()
                 self.ip = connect_info[0]
                 self.port = connect_info[1]
                 self.conf.add("ip", self.ip)
@@ -762,37 +770,37 @@ class Handler(object):
                 if not self.client:
                     self.client = client(self.ip, self.port)
                 self.client.connect()
-            
+
             else:
                 self.ip = self.conf.load()["ip"]
                 self.port = self.conf.load()["port"]
                 if not self.client:
                     self.client = client(self.ip, self.port)
                 self.client.connect()
-        
+
         if choice == 0:#login
             info = self.menu.login_screen()
             self.user = info[0]
             self.passw = info[1]
             if self.client.login(self.user, self.passw):
                 self.runtime()#here we go
-            
+
         if choice == 1:#register
             info = self.menu.register_screen()
             self.user = info[0]
             self.passw = info[1]
             if self.client.register(self.user, self.passw):
                 continue
-            
+
         if choice == 2:#config
             pass
-            
+
     def listen_handler(self):
         while self.loopmode:
             feedback = self.client.listen()
             tag = feedback["tag"]
             data = feedback["data"]
-            
+
             if tag == "sync_feedback":
                 for element in data[0]["generic"]["replace"]:
                     for obj in element:
@@ -820,15 +828,17 @@ class Handler(object):
                     continue
                 break
 
+    def sync(self, data, idlist):
+        self.client.send({"tag":"sync", "data":[data, idlist]})
+
     def runtime(self):
         self.client.positive_fb()#hata verebilir
         self.control()
         self.add_thread()
-        self.client.send({"tag":"sync", "data":[["generic"], {"generic_idlist":self.genericpool.sum_ids()}]})
+        self.sync(["generic", "player"],{"generic_idlist":self.genericpool.sum_ids(),"player_idlist":self.playerpool.sum_ids()})
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
         self.gui.map = self.genericpool.sum()
         self.gui.printmap()
-    
 
 if __name__ == "__main__":
     Handler_object = Handler(42, 18)
