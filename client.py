@@ -258,6 +258,7 @@ class gui(object):
 
     def __init__(self, max_x, max_y, tb_height = 5, tb_width = 30):
         self.log = logger("gui")
+        self.err = Error_Handler()
         self.max_x = max_x
         self.max_y = max_y
         self.cur_y = 0
@@ -276,6 +277,9 @@ class gui(object):
         self.cursor_y = 1
         self.location_index = 0
         self.selected = {"x":0, "y":0}
+        self.iron = 0
+        self.clay = 0
+        self.wood = 0
 
     def linecache(self, line):#sutunlari onyukler
         self.ycache = []
@@ -419,7 +423,7 @@ class gui(object):
                     self.location_index = cache_count
                     self.selected = self.cache[cache_count]
 
-    def placemenu(self, data, width = 30):#genel amacli menu
+    def placemenu(self, data,mode = "normal", width = 30):#genel amacli menu
         count = 0
         cursor_pos = 1
         pagecount = 1
@@ -428,6 +432,9 @@ class gui(object):
         page_count = 0
         cur_page = []
         cur_page_index = 0
+        if len(data) == 0:
+            self.log.write("placemenuye gelen verideki nesne sayisi 0 oldugundan dolayi placemenu acilamadi")
+            return False
         for place in data:#sayfalara gore siniflandirir
             count +=1
             itemcount += 1
@@ -455,10 +462,17 @@ class gui(object):
             menu.clear()
             ndx = 1
             for place in pages[cur_page_index]:
-                if ndx == cursor_pos:
-                    menu.addstr(ndx, 1, place["quickinfo"][0], self.green)
-                else:
-                    menu.addstr(ndx, 1, place["quickinfo"][0])
+                if mode == "place":
+                    if ndx == cursor_pos:
+                        menu.addstr(ndx, 1, place["quickinfo"][0], self.green)
+                    else:
+                        menu.addstr(ndx, 1, place["quickinfo"][0])
+                
+                if mode == "normal":
+                    if ndx == cursor_pos:
+                        menu.addstr(ndx, 1, place, self.green)
+                    else:
+                        menu.addstr(ndx, 1, place)
                 ndx += 1
 
             self.tb.placemenu_tb()
@@ -535,10 +549,25 @@ class gui(object):
             if getkey == "f":
                 break
 
-    def playermenu():
-        pass
+    def materials_refresher(self):
+        if self.lockmode:
+            self.tb.material_tb(self.wood, self.clay, self.iron)
+
+    def materials(self):
+        self.tb.material_tb(self.wood, self.clay, self.iron)
+        while 1:
+           curses.noecho()
+           self.screen.keypad(True)
+           getkey = self.screen.getkey(self.max_y +1, 1)
+           curses.echo()
+           self.screen.keypad(False)
+           if getkey == "m":
+               self.lockmode = False
+               break
+
 
     def printmap(self):#Dunya haritasini ekrana yazdirir
+        self.lockmode = False
         while 1:
             self.screen.clear()
             self.screen.refresh()
@@ -559,17 +588,18 @@ class gui(object):
                     xcounter +=1
                 counter += 1
             self.screen.refresh()
-            self.tb.world_tb()
+            if not self.lockmode:
+                self.tb.world_tb()
             curses.noecho()
             self.screen.keypad(True)
             getkey = self.screen.getkey(self.max_y+1, 1)
             curses.echo()
             self.screen.keypad(False)
 
-            if getkey == "q":
+            if getkey == "q":#onceki secim
                 self.select("back")
 
-            if getkey == "e":
+            if getkey == "e":#sonraki secim
                 self.select("next")
 
             if getkey == "d":
@@ -586,8 +616,8 @@ class gui(object):
             if getkey == "s":
                 self.cur_y +=1
 
-            if getkey == "g":
-                highlighted = self.placemenu(self.map)
+            if getkey == "g":#yer secici menusu
+                highlighted = self.placemenu(self.map, "place")
                 if highlighted:
                     self.selected = self.map[highlighted- 1]
                     if self.selected["x"] - int(self.max_x/2)>0:
@@ -602,12 +632,17 @@ class gui(object):
                         self.cur_y = 0
 
 
-            if getkey == "f":
+            if getkey == "f":#secim yap
                 if self.is_showed(self.selected):
                     self.minimenu(self.selected)
 
-            if getkey == "p":
-                pass
+            if getkey == "p":#kale menusu
+                player_menu_list = [""]#edit here
+                highlighted = self.placemenu(player_menu_list)
+
+            if getkey == "m":#material menusu
+                self.lockmode = True
+                self.materials()
 class toolbar(object):
 
     def __init__(self, toolbar_height,toolbar_width, max_y):
@@ -629,6 +664,20 @@ class toolbar(object):
         self.tb.addstr(4,4,":Mekan Listesi",self.bold)
         self.tb.addstr(5,1, "(p)", self.yellow)
         self.tb.addstr(5,4, ":Kale Menusu", self.bold)
+        self.tb.addstr(6, 1, "(m)" , self.yellow)
+        self.tb.addstr(6, 4, ":Materyaller", self.bold)
+        self.tb.refresh()
+
+    def material_tb(self, mt1, mt2, mt3 ):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "Odun:", self.bold)
+        self.tb.addstr(1, 7, str(mt1), self.yellow)
+        self.tb.addstr(2, 1, "Kil:", self.bold)
+        self.tb.addstr(2, 6, str(mt2), self.yellow)
+        self.tb.addstr(3, 1, "Demir:", self.bold)
+        self.tb.addstr(3, 8, str(mt3), self.yellow)
+        self.tb.addstr(4, 1, "(m)", self.yellow)
+        self.tb.addstr(4, 4, ":Geri Don", self.bold)
         self.tb.refresh()
 
     def quick_info_tb(self):
