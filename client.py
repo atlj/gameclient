@@ -56,6 +56,9 @@ class infopool(object):
             liste.append(self.pool[element])
         return liste
 
+    def __getitem__(self, index):
+        return self.pool[index]
+
     def save(self):#pickle object dondurecek
         savelist = {"pool":self.pool,  "info_ids":self.info_ids}
         with open(os.path.join(cdir,self.name+ ".pooldata"), "wb") as dosya:
@@ -858,7 +861,25 @@ class Handler(object):
                 for element in data[0]["generic"]["delete"]:
                     self.genericpool.remove(element)
                     self.genericpool.save()
-
+                
+                for element in data[0]["player"]["replace"]:
+                    for obj in element:
+                        self.playerpool.replace(obj, element[obj])
+                        self.playerpool.save()
+                
+                for element in data[0]["player"]["delete"]:
+                    self.playerpool.remove(element)
+                    self.playerpool.save()
+                
+                if not data[0]["player"]["replace"] == []:
+                    for id in self.playerpool.pool:
+                        element = self.playerpool.pool[id]
+                        if "iron" in element:
+                            
+                            self.gui.iron = element["iron"]
+                            self.gui.clay = element["clay"]
+                            self.gui.wood = element["wood"]
+                    self.gui.materials_refresher()
     def add_thread(self, number =1):
         for count in range(number):
             t = Thread(target=self.listen_handler)
@@ -887,6 +908,7 @@ class Handler(object):
         self.sync(["generic", "player"],{"generic_idlist":self.genericpool.sum_ids(),"player_idlist":self.playerpool.sum_ids()})
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
         self.gui.map = self.genericpool.sum()
+        
         self.gui.printmap()
 
 if __name__ == "__main__":
