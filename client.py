@@ -892,7 +892,7 @@ class Handler(object):
             #Kale adi belirleme
             while 1:
                 cr = self.menu.name_screen()
-                self.client.send({"tag":"register_info", "data":[cr[0]]})#burayi kontrol et
+                self.client.send({"tag":"register_info", "data":[cr]})#burayi kontrol et
                 fb = self.client.listen_once()
                 if fb["data"] == [False]:
                     continue
