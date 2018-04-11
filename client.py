@@ -23,6 +23,7 @@ class infopool(object):
 
     def findbyid(self, data):
         for info_id in self.pool:
+            self.log.write(str(info_id)+str(":")+str(self.pool[info_id]))
             if self.pool[info_id]["id"] == data["id"]:
                 return info_id
         return False
@@ -595,7 +596,12 @@ class gui(object):
                 self.tb.world_tb()
             curses.noecho()
             self.screen.keypad(True)
-            getkey = self.screen.getkey(self.max_y+1, 1)
+            try:
+                getkey = self.screen.getkey(self.max_y+1, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
             curses.echo()
             self.screen.keypad(False)
 
