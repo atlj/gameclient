@@ -800,6 +800,7 @@ class Handler(object):
     def __init__(self, gui_height, gui_width):
         self.gui_height = gui_height
         self.gui_width = gui_width
+        self.log = logger("Handler")
         self.conf = config("GameClient Config.conf")
         self.menu = Menu_Screens()
         self.err = Error_Handler()
@@ -867,6 +868,9 @@ class Handler(object):
                 for element in data[0]["generic"]["delete"]:
                     self.genericpool.remove(element)
                     self.genericpool.save()
+
+                if not data[0]["generic"]["replace"] == [] or not data[0]["generic"]["delete"] == []:
+                    self.gui.map = self.genericpool.sum()
                 
                 for element in data[0]["player"]["replace"]:
                     for obj in element:
@@ -880,11 +884,12 @@ class Handler(object):
                 if not data[0]["player"]["replace"] == []:
                     for id in self.playerpool.pool:
                         element = self.playerpool.pool[id]
-                        if "iron" in element:
+                        self.log.write("element sozlugu (bkz. 883)>> "+str(element))
+                        if "Demir" in element:
                             
-                            self.gui.iron = element["iron"]
-                            self.gui.clay = element["clay"]
-                            self.gui.wood = element["wood"]
+                            self.gui.iron = element["Demir"]
+                            self.gui.clay = element["Kil"]
+                            self.gui.wood = element["Odun"]
                     self.gui.materials_refresher()
     def add_thread(self, number =1):
         for count in range(number):
