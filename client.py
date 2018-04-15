@@ -284,7 +284,9 @@ class gui(object):
         self.iron = 0
         self.clay = 0
         self.wood = 0
-
+        self.armies = []
+        self.client = None
+        self.prices = {"army_price": {"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"}}
     def linecache(self, line):#sutunlari onyukler
         self.ycache = []
         for location in self.map:
@@ -294,8 +296,12 @@ class gui(object):
     def alert(self, text, **kwargs):
         #ozellikleri ayarlayan kisim
         linecount = 0
+        max_len = 0
         if not isinstance(text, list):
             text = [text]
+        for line in text:
+            if len(line)>max_len:
+                max_len = len(line)
         if not "pro_text" in kwargs:
             pro_text = ["Devam Etmek Icin", "Bir Tusa Basin"]
         else:
@@ -569,6 +575,113 @@ class gui(object):
                self.lockmode = False
                break
 
+    def army_screen(self):
+        army_count = 0
+        max_count = 8
+        operation_list = ["[Yeni Bir Ordu Olustur]"]
+        for army in self.armies:
+            army_count += 1
+            operation_list.append("{}".format(army.name+" "+army.general_name+" "+str(army.total_size)))
+        pos = 0
+        adix = 5#addition to index
+        while 1:
+            self.screen.clear()
+            self.screen.addstr(1, 1, "Ordu Menusu", self.bold)
+            self.screen.addstr(2, 1, "Sahip Oldugunuz Ordular {}/{}".format(str(army_count), str(max_count)), self.bold)
+            index = 0
+            for operation in operation_list:
+                if index == pos:
+                    self.screen.addstr(index+adix, 1, operation, self.green)
+                else:
+                    self.screen.addstr(index+adix, 1, operation)
+                index += 1
+
+            self.screen.refresh()
+            self.tb.army_tb()
+            curses.noecho()
+            self.screen.keypad(True)
+            getkey = self.screen.getkey(max_count +1 + adix, 1)
+            curses.echo()
+            self.screen.keypad(False)
+       
+            if getkey == "w":
+                if not pos == 0:
+                    pos = pos -1
+                else:
+                    pos = army_count 
+        
+            if getkey == "s":
+                if not pos == army_count:
+                    pos +=1
+                else:
+                    pos = 0
+
+            if getkey == "f":
+                if not pos == 0:
+                    self.army_operation(self.armies[pos-1])
+                else:
+                    self.create_army()
+
+            if getkey == "q":
+                break
+    def army_operation(self, army):
+        pass
+
+
+    def create_army(self):
+        price = ""
+        
+        for i in self.prices["army_price"]:
+            price = price + str(i+": "+self.prices["army_price"][i]+" ")
+            
+        pos = 0
+        army_name = "___"
+        general_name = "___"
+        while 1:
+            self.screen.clear()
+            self.screen.addstr(1, 1, "Bir Ordu Olustur", self.bold)
+            self.screen.addstr(2, 1, "Ordu Olusturma Fiyati:", self.bold)
+            self.screen.addstr(3, 1, price, self.green)
+            self.screen.addstr(pos + 5, 1, "-->", self.green)
+            self.screen.addstr(5, 5, "Ordu Ismi")
+            self.screen.addstr(5, 20, army_name)
+            self.screen.addstr(6, 5, "General Ismi")
+            self.screen.addstr(6, 20, general_name)
+            self.screen.refresh()
+
+            curses.noecho()
+            self.screen.keypad(True)
+            self.tb.create_army_tb()
+            getkey = self.screen.getkey(7, 1)
+            curses.echo()
+            self.screen.keypad(False)
+            if getkey == "w":
+                if not pos == 0:
+                    pos = pos -1
+                else:
+                    pos = 1
+
+            if getkey == "s":
+                if not pos == 1:
+                    pos +=1
+                else:
+                    pos = 0
+
+            if getkey == "e":
+                if pos == 0:
+                    army_name = self.screen.getstr(5, 20)
+                if pos == 1:
+                    general_name = self.screen.getstr(6, 20)
+
+            if getkey == "c":
+                if not len(army_name)>3:
+                    self.alert(["Ordu Adi", "En Az 4 Karakter Olmali"])
+                    continue
+                if not len(general_name)>3:
+                    self.alert(["General Adi", "En Az 4 Karakter Olmali"])
+                    continue
+                self.client.send({"tag":"create_army", "data":[army_name, general_name]})
+                break
 
     def printmap(self):#Dunya haritasini ekrana yazdirir
         self.lockmode = False
@@ -646,12 +759,16 @@ class gui(object):
                     self.minimenu(self.selected)
 
             if getkey == "p":#kale menusu
-                player_menu_list = [""]#edit here
-                highlighted = self.placemenu(player_menu_list)
+                player_menu_list = ["Ordu Tasarla"]#edit here
+                highlighted = self.placemenu(player_menu_list) - 1
+                
+                if highlighted == 0:
+                    self.army_screen()
 
             if getkey == "m":#material menusu
                 self.lockmode = True
                 self.materials()
+
 class toolbar(object):
 
     def __init__(self, toolbar_height,toolbar_width, max_y):
@@ -675,6 +792,26 @@ class toolbar(object):
         self.tb.addstr(5,4, ":Kale Menusu", self.bold)
         self.tb.addstr(6, 1, "(m)" , self.yellow)
         self.tb.addstr(6, 4, ":Materyaller", self.bold)
+        self.tb.refresh()
+
+    def army_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(w/s)", self.yellow)
+        self.tb.addstr(1, 6, ":Yukari/Asagi", self.bold)
+        self.tb.addstr(2, 1, "(f)", self.yellow)
+        self.tb.addstr(2, 4, ":Sec", self.bold)
+        self.tb.addstr(3, 1, "(q)", self.yellow)
+        self.tb.addstr(3, 4, ":Cik", self.bold)
+        self.tb.refresh()
+
+    def create_army_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(w/s)", self.yellow)
+        self.tb.addstr(1, 6, ":Yukari/Asagi", self.bold)
+        self.tb.addstr(2, 1, "(e)", self.yellow)
+        self.tb.addstr(2, 4, ":Sec", self.bold)
+        self.tb.addstr(3, 1, "(c)", self.yellow)
+        self.tb.addstr(3, 4, ":Devam Et", self.bold)
         self.tb.refresh()
 
     def material_tb(self, mt1, mt2, mt3 ):
@@ -859,6 +996,12 @@ class Handler(object):
             feedback = self.client.listen()
             tag = feedback["tag"]
             data = feedback["data"]
+            if tag == "create_army_feedback":
+                if data == [True]:
+                    self.gui.alert(["Ordu Olusturma", "Basarili"])
+                else:
+                    if data[1] == "err_material":
+                        self.gui.alert(["Yetersiz Materyal"], pro_color = gui.yellow)
 
             if tag == "sync_feedback":
                 for element in data[0]["generic"]["replace"]:
@@ -918,6 +1061,7 @@ class Handler(object):
         self.add_thread()
         self.sync(["generic", "player"],{"generic_idlist":self.genericpool.sum_ids(),"player_idlist":self.playerpool.sum_ids()})
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
+        gui.client = self.client
         self.gui.map = self.genericpool.sum()
         
         self.gui.printmap()
