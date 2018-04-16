@@ -680,7 +680,7 @@ class gui(object):
                 if not len(general_name)>3:
                     self.alert(["General Adi", "En Az 4 Karakter Olmali"])
                     continue
-                self.client.send({"tag":"create_army", "data":[army_name, general_name]})
+                self.client.send({"tag":"create_army", "data":[str(army_name), str(general_name)]})
                 break
 
     def printmap(self):#Dunya haritasini ekrana yazdirir
@@ -1060,8 +1060,9 @@ class Handler(object):
         self.control()
         self.add_thread()
         self.sync(["generic", "player"],{"generic_idlist":self.genericpool.sum_ids(),"player_idlist":self.playerpool.sum_ids()})
+        self.log.write("Arayuz Baslatiliyor")
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
-        gui.client = self.client
+        self.gui.client = self.client
         self.gui.map = self.genericpool.sum()
         
         self.gui.printmap()
@@ -1070,15 +1071,3 @@ if __name__ == "__main__":
     Handler_object = Handler(42, 18)
     Handler_object.loopmode = True
     Handler_object.main()
-
-"""
-ekran = gui(42,18,7,40)
-
-ekran.cur_y = 0
-ekran.cur_x = 0
-ekran.map = [{"x":1,"y":1,"marker":"V","quickinfo":["Kahraman Köyü","Level 278","babatek Klanı"]},{"x":51,"y":11,"marker":"C", "quickinfo":["Yalı Kampı","Level: 67","atesli_55 Klanı"]},{"x":5,"y":6,"marker":"M","quickinfo":["Pussydestroyer Madeni","Level 69", "Biricik Klanı"]},{"x":10, "y":10, "marker":"c","quickinfo":["Swagboyyolo Kampı","Level 100","Babatek Klanı"]}]
-def map_sort(data):
-    return data["quickinfo"][0]
-ekran.map = sorted(ekran.map, key=map_sort)
-ekran.printmap()
-"""
