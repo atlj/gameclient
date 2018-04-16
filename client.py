@@ -51,10 +51,12 @@ class infopool(object):
         except KeyError:
             self.log.write("Veri, mevcut veritabaninda bulunmadigindan dolayi silinemedi: "+str(data))
 
-    def sum(self):
+    def sum(self, fltr):
         liste = []
         for element in self.pool:
-            liste.append(self.pool[element])
+            if self.pool[element]["datatype"] == fltr:
+                liste.append(self.pool[element])
+        self.log.write("Havuz Ozeti Sonuclari: Filtre:{}\n{}".format(str(fltr), str(liste)))
         return liste
 
     def __getitem__(self, index):
@@ -285,6 +287,7 @@ class gui(object):
         self.clay = 0
         self.wood = 0
         self.armies = []
+        self.lockmode = False
         self.client = None
         self.prices = {"army_price": {"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"}}
     def linecache(self, line):#sutunlari onyukler
@@ -632,7 +635,7 @@ class gui(object):
         price = ""
         
         for i in self.prices["army_price"]:
-            price = price + str(i+": "+self.prices["army_price"][i]+" ")
+            price = price + i+": "+str(self.prices["army_price"][i])+" "
             
         pos = 0
         army_name = "___"
@@ -684,7 +687,6 @@ class gui(object):
                 break
 
     def printmap(self):#Dunya haritasini ekrana yazdirir
-        self.lockmode = False
         while 1:
             self.screen.clear()
             self.screen.refresh()
@@ -1000,8 +1002,10 @@ class Handler(object):
                 if data == [True]:
                     self.gui.alert(["Ordu Olusturma", "Basarili"])
                 else:
+                    if data[1] == "err_name":
+                        self.gui.alert(["Ayni Isimli Bir Ordu Bulunmakta"], pro_color = self.gui.yellow)
                     if data[1] == "err_material":
-                        self.gui.alert(["Yetersiz Materyal"], pro_color = gui.yellow)
+                        self.gui.alert(["Yetersiz Materyal"], pro_color = self.gui.yellow)
 
             if tag == "sync_feedback":
                 for element in data[0]["generic"]["replace"]:
@@ -1013,7 +1017,8 @@ class Handler(object):
                     self.genericpool.save()
 
                 if not data[0]["generic"]["replace"] == [] or not data[0]["generic"]["delete"] == []:
-                    self.gui.map = self.genericpool.sum()
+                    self.gui.map = self.genericpool.sum("place")
+                    self.gui.prices = self.genericpool.sum("prices")[0]["data"]
                 
                 for element in data[0]["player"]["replace"]:
                     for obj in element:
@@ -1025,14 +1030,10 @@ class Handler(object):
                     self.playerpool.save()
                 
                 if not data[0]["player"]["replace"] == []:
-                    for id in self.playerpool.pool:
-                        element = self.playerpool.pool[id]
-                        self.log.write("element sozlugu (bkz. 883)>> "+str(element))
-                        if "Demir" in element:
-                            
-                            self.gui.iron = element["Demir"]
-                            self.gui.clay = element["Kil"]
-                            self.gui.wood = element["Odun"]
+                    element = self.playerpool.sum("materials")[0]
+                    self.gui.iron = element["Demir"]
+                    self.gui.clay = element["Kil"]
+                    self.gui.wood = element["Odun"]
                     self.gui.materials_refresher()
     def add_thread(self, number =1):
         for count in range(number):
@@ -1063,7 +1064,7 @@ class Handler(object):
         self.log.write("Arayuz Baslatiliyor")
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
         self.gui.client = self.client
-        self.gui.map = self.genericpool.sum()
+        self.gui.map = self.genericpool.sum("place")
         
         self.gui.printmap()
 
