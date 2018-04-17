@@ -363,7 +363,12 @@ class gui(object):
             win.refresh()
             curses.noecho()
             self.screen.keypad(True)
-            win.getkey(count +1, 1)#edit here
+            try:
+                win.getkey(count +1, 1)#edit here
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
             curses.echo()
             self.screen.keypad(False)
             break
@@ -494,7 +499,14 @@ class gui(object):
 
             curses.noecho()
             self.screen.keypad(True)
-            getkey = self.screen.getkey(self.max_y+1, 1)
+            try:
+                getkey = self.screen.getkey(self.max_y+1, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
+            curses.echo()
+            self.screen.keypad(False)
             if getkey == "g":
                 break
 
@@ -556,7 +568,12 @@ class gui(object):
         while 1:
             curses.noecho()
             self.screen.keypad(True)
-            getkey = self.screen.getkey(self.max_y+1,1)
+            try:
+                getkey = self.screen.getkey(self.max_y+1,1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
             curses.echo()
             self.screen.keypad(False)
             if getkey == "f":
@@ -603,7 +620,12 @@ class gui(object):
             self.tb.army_tb()
             curses.noecho()
             self.screen.keypad(True)
-            getkey = self.screen.getkey(max_count +1 + adix, 1)
+            try:
+                getkey = self.screen.getkey(max_count +1 + adix, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
             curses.echo()
             self.screen.keypad(False)
        
@@ -655,7 +677,12 @@ class gui(object):
             curses.noecho()
             self.screen.keypad(True)
             self.tb.create_army_tb()
-            getkey = self.screen.getkey(7, 1)
+            try:
+                getkey = self.screen.getkey(7, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
             curses.echo()
             self.screen.keypad(False)
             if getkey == "w":
