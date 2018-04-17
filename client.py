@@ -289,7 +289,9 @@ class gui(object):
         self.armies = []
         self.lockmode = False
         self.client = None
-        self.prices = {"army_price": {"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"}}
+        #HARDCORE ALERT TODO fix here
+        self.prices = {"troop_price":{"yaya_asker":{"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"},"zirhli_asker":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"}, "atli_asker":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"}, "kusatma_makinesi":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"} }, "army_price": {"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"}}
+        #END OF HARDCODE
     def linecache(self, line):#sutunlari onyukler
         self.ycache = []
         for location in self.map:
@@ -601,7 +603,7 @@ class gui(object):
         operation_list = ["[Yeni Bir Ordu Olustur]"]
         for army in self.armies:
             army_count += 1
-            operation_list.append("{}".format(army.name+" "+army.general_name+" "+str(army.total_size)))
+            operation_list.append("{}".format(army["name"]+" "+army["general_name"]+" "+str(army["total_size"])))
         pos = 0
         adix = 5#addition to index
         while 1:
@@ -650,7 +652,142 @@ class gui(object):
             if getkey == "q":
                 break
     def army_operation(self, army):
-        pass
+        pos = 0
+        span = 3
+        islemler = ["Birlikleri Goruntule", "Yeni Bir Birlik Olustur", "Formasyonu Duzenle", "Hareket Ettir"]
+        while 1:
+            ndx = 1
+            self.screen.clear()
+            self.screen.addstr(1, 1, "Ordu Menusu", self.bold)
+            self.screen.addstr(2, 1, "Ordu Adi: {} General Adi: {}".format(army["name"], army["general_name"]), self.bold)
+
+            for islem in islemler:
+                if pos + 1 == ndx:
+                    self.screen.addstr(ndx+span, 1, islem, self.green)
+                else:
+                    self.screen.addstr(ndx+span, 1, islem)
+                ndx +=1
+
+            self.screen.refresh()
+            self.tb.army_operation_tb()
+            self.screen.keypad(True)
+            curses.noecho()
+            try:
+                getkey = self.screen.getkey(len(islemler)+span+1, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
+            self.screen.keypad(False)
+            curses.echo()
+
+            if getkey == "w":
+                if not pos == 0:
+                    pos = pos -1
+                else:
+                    pos = len(islemler)- 1
+
+            if getkey == "s":
+                if not pos == len(islemler) -1:
+                    pos +=1
+                else:
+                    pos = 0
+
+            if getkey == "q":
+                break
+
+            if getkey == "f":
+                if pos == 0:#Birlikleri Goruntule
+                    pass
+                if pos == 1:#Yeni Bir Birlik Olustur
+                    self.create_troop()
+                if pos == 2:#Formasyonu Duzenle
+                    pass
+                if pos == 3:#Hareket Ettir
+                    pass
+
+    def create_troop(self):
+        birlikler = ["Yaya Asker", "Zirhli Asker", "Atli Asker", "Kusatma Makinesi"]
+        bio = ["", "", "", ""]#TODO bio yaz
+
+        pos = 0
+        span = 2
+        while 1:
+            self.screen.clear()
+            self.screen.addstr(1, 1, "Birlik Olusturma", self.bold)
+            ndx = 1
+
+            for birlik in birlikler:
+                if pos +1 == ndx:
+                    self.screen.addstr(span + ndx, 1, birlik, self.green)
+                else:
+                    self.screen.addstr(span+ndx, 1, birlik)
+                ndx +=1
+
+            self.screen.refresh()
+            self.tb.army_operation_tb()
+
+            curses.noecho()
+            self.screen.keypad(True)
+            try:
+                getkey = self.screen.getkey(len(birlikler)+span+1, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
+
+            if getkey == "w":
+                if not pos == 0:
+                    pos = pos - 1
+
+                else:
+                    pos = len(birlikler) -1
+
+            if getkey == "s":
+                if not pos == len(birlikler) -1:
+                    pos +=1
+                else:
+                    pos = 0
+
+            if getkey == "q":
+                break
+
+            if getkey == "f":
+                name = birlikler[pos]
+                name = name.lower()
+                name = name.replace(" ", "_")
+                price = ""
+                for i in self.prices["troop_price"][name]:
+                    price += "{}: ".format(i, str(self.prices["troop_price"][name][i]))
+                while 1:
+                    self.screen.clear()
+                    self.screen.addstr(1, 1, "Birlik Olusturma", self.bold)
+                    self.screen.addstr(3, 1, "Tur: ", self.yellow)
+                    self.screen.addstr(3, 6, birlikler[pos], self.bold)
+                    self.screen.addstr(4, 1, "Fiyat: ", self.yellow)
+                    self.screen.addstr(4, 8, price, self.bold)
+                    self.screen.addstr(5, 1, "Tanim: ", self.yellow)
+                    self.screen.addstr(5, 8, bio[pos], self.bold)
+                    self.screen.refresh()
+                    self.tb.yn_tb()
+
+                    curses.noecho()
+                    self.screen.keypad(True)
+                    try:
+                        getkey = self.screen.getkey(7, 1)
+                    except KeyboardInterrupt:
+                        curses.endwin()
+                        print("Istemci Sonlandirildi")
+                        os._exit(0)
+                    curses.echo()
+                    self.screen.keypad(False)
+
+                    if getkey == "e":
+                        self.client.send({"tag":"create_troop", "data":[pos]})
+                        break
+
+                    if getkey == "h":
+                        break
 
 
     def create_army(self):
@@ -833,6 +970,16 @@ class toolbar(object):
         self.tb.addstr(3, 4, ":Cik", self.bold)
         self.tb.refresh()
 
+    def army_operation_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(w/s)", self.yellow)
+        self.tb.addstr(1, 6, ":Yukari/Asagi", self.bold)
+        self.tb.addstr(2, 1, "(f)", self.yellow)
+        self.tb.addstr(2, 4, ":Sec", self.bold)
+        self.tb.addstr(3, 1, "(q)", self.yellow)
+        self.tb.addstr(3, 4, ":Geri", self.bold)
+        self.tb.refresh()
+
     def create_army_tb(self):
         self.tb.clear()
         self.tb.addstr(1, 1, "(w/s)", self.yellow)
@@ -853,6 +1000,14 @@ class toolbar(object):
         self.tb.addstr(3, 8, str(mt3), self.yellow)
         self.tb.addstr(4, 1, "(m)", self.yellow)
         self.tb.addstr(4, 4, ":Geri Don", self.bold)
+        self.tb.refresh()
+
+    def yn_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(e)", self.yellow)
+        self.tb.addstr(1, 4, ":Devam Et", self.bold)
+        self.tb.addstr(2, 1, "(h)", self.yellow)
+        self.tb.addstr(2, 4, "Geri", self.bold)
         self.tb.refresh()
 
     def quick_info_tb(self):
@@ -1062,6 +1217,7 @@ class Handler(object):
                     self.gui.clay = element["Kil"]
                     self.gui.wood = element["Odun"]
                     self.gui.materials_refresher()
+                    self.gui.armies = self.playerpool.sum("army")
     def add_thread(self, number =1):
         for count in range(number):
             t = Thread(target=self.listen_handler)
