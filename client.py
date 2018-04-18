@@ -700,13 +700,173 @@ class gui(object):
                 if pos == 0:#Birlikleri Goruntule
                     pass
                 if pos == 1:#Yeni Bir Birlik Olustur
-                    self.create_troop()
+                    self.create_troop(army)
                 if pos == 2:#Formasyonu Duzenle
                     pass
                 if pos == 3:#Hareket Ettir
-                    pass
+                    self.move_army(army)
 
-    def create_troop(self):
+    def move_army(self, army):
+        ops = ["Bir Koordinata Gonder", "Bir Mekana Gonder"]
+        pos = 0
+        span = 3
+        while 1:
+            self.screen.clear()
+            self.screen.addstr(1, 1, "Orduyu Hareket Ettir", self.bold)
+            self.screen.addstr(2, 1, "Ordu Adi: {}, General Adi: {}".format(army["name"], army["general_name"]), self.bold)
+            ndx = 1
+            for op in ops:
+                if pos +1 == ndx:
+                    self.screen.addstr(ndx + span, 1, op, self.green)
+                else:
+                    self.screen.addstr(ndx+span, 1, op)
+                ndx += 1
+            self.screen.refresh()
+            self.tb.army_operation_tb()
+            curses.noecho()
+            self.screen.keypad(True)
+            try:
+                getkey = self.screen.getkey(len(ops)+ span + 1, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
+            curses.echo()
+            self.screen.keypad(False)
+
+            if getkey == "w":
+                if not pos == 0:
+                    pos = pos -1
+                else:
+                    pos = len(ops) -1
+
+            if getkey == "s":
+                if not pos == len(ops) -1:
+                    pos +=1
+                else:
+                    pos = 0
+
+            if getkey == "q":
+                break
+
+            if getkey == "f":
+                if pos == 0:
+                    sublist = ["X:", "Y:"]
+                    pre = ["___", "___"]
+                    span = 3
+                    spos = 0
+                    while 1:
+                        self.screen.clear()
+                        self.screen.addstr(1, 1, "Bir Koordinata Gonder", self.bold)
+                        self.screen.addstr(2, 1, "Ordu Adi: {}, General Adi: {}".format(army["name"], army["general_name"]), self.bold)
+                        ndx = 1
+                        for i in sublist:
+                            if spos +1 == ndx:
+                                self.screen.addstr(span + ndx, 1, i, self.green)
+                            else:
+                                self.screen.addstr(span+ndx, 1, i)
+                            self.screen.addstr(span+ndx, 5, str(pre[sublist.index(i)]))
+                            ndx +=1
+                        self.screen.refresh()
+                        self.tb.army_pos_tb()
+                        curses.noecho()
+                        self.screen.keypad(True)
+                        try:
+                            getkey = self.screen.getkey(span+ len(sublist)+2, 1)
+                        except KeyboardInterrupt:
+                            curses.endwin()
+                            print("Istemci Sonlandirildi")
+                            os._exit(0)
+
+                        curses.echo()
+                        self.screen.keypad(False)
+
+                        if getkey == "w":
+                            if not spos == 0:
+                                spos = spos - 1
+                            else:
+                                spos = len(sublist) -1
+
+                        if getkey == "s":
+                            if not spos == len(sublist) - 1:
+                                spos +=1
+                            else:
+                                spos = 0
+
+                        if getkey == "q":
+                            break
+
+                        if getkey == "e":
+                            try:
+                                pre[spos] = self.screen.getstr(span + spos +1, 5)
+                                pre[spos] = int(pre[spos])
+                            except ValueError:
+                                self.alert(["Girdiginiz Deger", "Bir Sayi Degeri Olmali"])
+                                pre[spos] = "___"
+
+                        if getkey == "c":
+                            try:
+                                for i in pre:
+                                    pre[pre.index(i)] = int(i)
+
+                                self.client.send({"tag":"action", "data":[{"type":"move_army", 
+                                "x":pre[0], "y":pre[1], "army_id":army["id"]}]})
+                                break
+                            except ValueError:
+                                self.alert(["Girdiginiz Degerler", "Sayi Degerleri Olmali"])
+
+
+
+
+    def common_menu(self, contains, headertext, subtext, span = 3):
+        pos = 0
+        while 1:
+            self.screen.clear()
+            self.screen.addstr(1, 1, headertext, self.bold)
+            self.screen.addstr(2, 1, subtext, self.bold)
+            ndx = 1
+            for op in contains:
+                if pos +1 == ndx:
+                    self.screen.addstr(ndx + span, 1, op, self.yellow)
+                else:
+                    self.screen.addstr(ndx+span, 1, op)
+                ndx +=1
+
+            self.screen.refresh()
+            self.tb.army_operation_tb()
+            self.screen.keypad(True)
+            curses.noecho()
+            try:
+                getkey = self.screen.getkey(len(contains)+span+1, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
+
+            curses.echo()
+            self.screen.keypad(False)
+
+            if getkey == "w":
+                if not pos == 0:
+                    pos = pos-1
+                else:
+                    pos = len(contains) -1
+
+            if getkey == "s":
+                if not pos == len(contains) -1:
+                    pos += 1
+
+                else:
+                    pos = 0
+
+            if getkey == "q":
+                break
+
+            if getkey == "f":
+                return pos
+
+            
+    def create_troop(self, army):
         birlikler = ["Yaya Asker", "Zirhli Asker", "Atli Asker", "Kusatma Makinesi"]
         bio = ["", "", "", ""]#TODO bio yaz
 
@@ -988,6 +1148,18 @@ class toolbar(object):
         self.tb.addstr(2, 4, ":Sec", self.bold)
         self.tb.addstr(3, 1, "(c)", self.yellow)
         self.tb.addstr(3, 4, ":Devam Et", self.bold)
+        self.tb.refresh()
+
+    def army_pos_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(w/s)", self.yellow)
+        self.tb.addstr(1, 6, ":Yukari/Asagi", self.bold)
+        self.tb.addstr(2, 1, "(e)", self.yellow)
+        self.tb.addstr(2, 4, ":Sec", self.bold)
+        self.tb.addstr(3, 1, "(c)", self.yellow)
+        self.tb.addstr(3, 4, ":Devam Et", self.bold)
+        self.tb.addstr(4, 1, "(q)", self.yellow)
+        self.tb.addstr(4, 4, ":Geri", self.bold)
         self.tb.refresh()
 
     def material_tb(self, mt1, mt2, mt3 ):
