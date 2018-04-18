@@ -249,13 +249,13 @@ class client(object):
 
     def send(self, data):
         try:
-            s.send(bytes(json.dumps(data), "utf-8"))
+            s.send(bytes(json.dumps(data)+"\n", "utf-8"))
 
         except json.decoder.JSONDecodeError:
             self.log.write("gonderilecek veri islenemedi:" +data)
 
         except socket.error:
-            self.log.write("sockette meydana gelen hatadan dolayi paket gonderilemedi: "+data)
+            self.log.write("sockette meydana gelen hatadan dolayi paket gonderilemedi: "+str(data))
             #TODO edit here
 
 
