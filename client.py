@@ -803,9 +803,11 @@ class gui(object):
                             except ValueError:
                                 self.alert(["Girdiginiz Deger", "Bir Sayi Degeri Olmali"])
                                 pre[spos] = "___"
+                                continue
                             if pre[spos] <1:
                                 self.alert(["Girdiginiz Deger", "Bir Pozitif Tamsayi Olmali"])
                                 pre[spos] = "___"
+                                continue
 
                         if getkey == "c":
                             try:
