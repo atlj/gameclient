@@ -171,7 +171,7 @@ class client(object):
         self.passw = passw
         while 1:
             self.send({"tag":"login", "data":[{"user":self.user, "pass":self.passw}]})
-            feedback = self.listen_once(35)
+            feedback = self.listen_once()
             if feedback["tag"] == "feedback":
                 if feedback["data"] == [True]:
                     return True
@@ -923,7 +923,7 @@ class gui(object):
                 name = name.replace(" ", "_")
                 price = ""
                 for i in self.prices["troop_price"][name]:
-                    price += "{}: ".format(i, str(self.prices["troop_price"][name][i]))
+                    price += "{}: {} ".format(i, str(self.prices["troop_price"][name][i]))
                 while 1:
                     self.screen.clear()
                     self.screen.addstr(1, 1, "Birlik Olusturma", self.bold)
@@ -948,7 +948,10 @@ class gui(object):
                     self.screen.keypad(False)
 
                     if getkey == "e":
-                        self.client.send({"tag":"create_troop", "data":[pos]})
+                        self.client.send({"tag":"action", "data":[{
+                            "type":"create_troop",
+                            "army_id":army["id"],
+                            "troop_type":pos}]})
                         break
 
                     if getkey == "h":
