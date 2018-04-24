@@ -1002,6 +1002,9 @@ class gui(object):
                 else:
                     pos = 0
 
+            if getkey == "q":
+                break
+
             if getkey == "e":
                 if pos == 0:
                     army_name = self.screen.getstr(5, 20)
@@ -1156,6 +1159,8 @@ class toolbar(object):
         self.tb.addstr(2, 4, ":Sec", self.bold)
         self.tb.addstr(3, 1, "(c)", self.yellow)
         self.tb.addstr(3, 4, ":Devam Et", self.bold)
+        self.tb.addstr(4, 1, "(q)", self.yellow)
+        self.tb.addstr(4, 4, ":Cik", self.bold)
         self.tb.refresh()
 
     def army_pos_tb(self):
