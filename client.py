@@ -698,13 +698,122 @@ class gui(object):
 
             if getkey == "f":
                 if pos == 0:#Birlikleri Goruntule
-                    pass
+                    liste = []
+                    for troop in army["troops"]:
+                        liste.append(troop["name"])
+                    if liste == []:
+                        self.alert(["Sectiginiz Orduda", "Herhangi Bir Birlik Bulunmuyor"])
+                        continue
+                    feedback = self.common_menu(liste, "Birlikleri Goruntule", "Ordu Adi: {}, General Adi: {}".format(army["name"], army["general_name"]))
+                    pass #TODO make here
                 if pos == 1:#Yeni Bir Birlik Olustur
                     self.create_troop(army)
                 if pos == 2:#Formasyonu Duzenle
                     pass
                 if pos == 3:#Hareket Ettir
                     self.move_army(army)
+
+    def common_menu(self, liste, headertext, subtext):
+        span = 4
+        pos = 0
+        max_count = 8
+        pages = []
+        rcount = 0
+        if int(len(liste)/max_count)<len(liste)/max_count:
+            rcount = int(len(liste)/max_count) + 1
+        else:
+            rcount = int(len(liste)/max_count)
+        for i in range(rcount):
+            pages.append([])
+        page_pos = 0
+        counter = 0
+        cur_page_index = 0
+        last_count = 0
+        for element in liste:
+            if not counter == max_count:
+                pages[page_pos].append(element)
+                counter += 1
+                last_count +=1
+            else:
+                last_count = 1
+                page_pos += 1
+                pages[page_pos].append(element)
+                counter = 1
+
+        while 1:
+            self.screen.clear()
+            self.screen.addstr(1, 1, headertext, self.bold)
+            self.screen.addstr(2, 1, subtext, self.bold)
+            self.screen.addstr(3, 1, "Sayfa: {}/{}".format(str(cur_page_index + 1), str(len(pages))), self.bold)
+            ndx = 1
+            for element in pages[cur_page_index]:
+                if pos+1 == ndx:
+                    self.screen.addstr(ndx+span, 1, element, self.green)
+                else:
+                    self.screen.addstr(ndx+span, 1, element)
+                ndx += 1
+            self.screen.refresh()
+            self.tb.common_tb()
+            self.screen.keypad(True)
+            curses.noecho()
+            try:
+                getkey = self.screen.getkey(max_count + span + 2, 1)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(1)
+            curses.echo()
+            self.screen.keypad(False)
+
+            if getkey == "w":
+                if not pos == 0:
+                    pos -= 1
+                else:
+                    if not cur_page_index == 0:
+                        cur_page_index -= 1
+                        pos = max_count - 1
+                    else:
+                        cur_page_index = len(pages) - 1
+                        pos = last_count - 1
+
+            if getkey == "s":
+                if not cur_page_index == len(pages) - 1:
+                    if not pos == len(pages[cur_page_index]) - 1:
+                        pos +=1
+                    else:
+                        cur_page_index += 1
+                        pos = 0
+                else:
+                    if not pos == last_count - 1:
+                        pos += 1
+                    else:
+                        pos = 0
+                        cur_page_index = 0
+
+            if getkey == "e":
+                return cur_page_index * max_count + pos
+
+            if getkey == "q":
+                break
+
+            if getkey == "d":
+                if not cur_page_index == len(pages) - 1:
+                    cur_page_index += 1
+                else:
+                    cur_page_index = 0
+                while not pos <= len(pages[cur_page_index])- 1:
+                    pos -= 1
+
+            if getkey == "a":
+                if not cur_page_index == 0:
+                    cur_page_index -= 1
+
+                else:
+                    cur_page_index = len(pages) - 1
+                while not pos <= len(pages[cur_page_index]) - 1:
+                    pos -= 1
+
+
 
     def move_army(self, army):
         ops = ["Bir Koordinata Gonder", "Bir Mekana Gonder"]
@@ -823,7 +932,7 @@ class gui(object):
 
 
 
-    def common_menu(self, contains, headertext, subtext, span = 3):
+    def common_minimenu(self, contains, headertext, subtext, span = 3):
         pos = 0
         while 1:
             self.screen.clear()
@@ -870,7 +979,6 @@ class gui(object):
             if getkey == "f":
                 return pos
 
-            
     def create_troop(self, army):
         birlikler = ["Yaya Asker", "Zirhli Asker", "Atli Asker", "Kusatma Makinesi"]
         bio = ["", "", "", ""]#TODO bio yaz
@@ -1161,6 +1269,18 @@ class toolbar(object):
         self.tb.addstr(3, 4, ":Devam Et", self.bold)
         self.tb.addstr(4, 1, "(q)", self.yellow)
         self.tb.addstr(4, 4, ":Cik", self.bold)
+        self.tb.refresh()
+
+    def common_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(w/s)", self.yellow)
+        self.tb.addstr(1, 6, ":Yukari/Asagi", self.bold)
+        self.tb.addstr(2, 1, "(q)", self.yellow)
+        self.tb.addstr(2, 4, ":Geri", self.bold)
+        self.tb.addstr(3, 1, "(f)", self.yellow)
+        self.tb.addstr(3, 4, ":Sec", self.bold)
+        self.tb.addstr(4, 1, "(d/a)", self.yellow)
+        self.tb.addstr(4, 6, ":Sonraki/Onceki Sayfa", self.bold)
         self.tb.refresh()
 
     def army_pos_tb(self):
