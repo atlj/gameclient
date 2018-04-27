@@ -1149,6 +1149,14 @@ class gui(object):
                         self.screen.addstr(counter,xcounter +1,self.getline(self.cur_x+xcounter))
                     xcounter +=1
                 counter += 1
+            if self.selected["x"] == 0:
+                text = "x: {} y: {}".format(str(self.cur_x + int(self.max_x/2)),str(self.cur_y + int(self.max_y/2)))
+            else:
+                if self.is_showed(self.selected):
+                    text = "x: {} y:{} Secim: {}".format(str(self.cur_x + int(self.max_x/2)), str(self.cur_y + int(self.max_y/2)), self.selected["name"])
+                else:
+                    text = "x: {} y:{}".format(str(self.cur_x + int(self.max_x / 2)), str(self.cur_y + int(self.max_y/2)))
+            self.screen.addstr(self.max_y+ 1, int(self.max_x/2) - 4, text, self.bold)
             self.screen.refresh()
             if not self.lockmode:
                 self.tb.world_tb()
