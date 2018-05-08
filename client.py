@@ -1222,6 +1222,13 @@ class gui(object):
                 self.lockmode = True
                 self.materials()
 
+class notification_bar(object):
+    def __init__(self,y):
+        self.config = config("notification_bar")
+        if not self.config.control():
+            self.mode = ""#TODO
+
+
 class toolbar(object):
 
     def __init__(self, toolbar_height,toolbar_width, max_y):
