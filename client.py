@@ -4,8 +4,6 @@ import pickle
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 cdir = os.path.dirname(os.path.realpath(__file__))
 
-
-
 class infopool(object):
     def __init__(self, name):
         self.name = name
@@ -30,6 +28,9 @@ class infopool(object):
 
     def add(self,id,  data):
         self.pool[id] = data
+
+    def add_rand(self, data):
+        self.pool[self.getid()] = data
 
     def replace(self,newid,  data):
         old_id = self.findbyid(data)
@@ -289,6 +290,7 @@ class gui(object):
         self.armies = []
         self.lockmode = False
         self.client = None
+        self.nb = notification_bar(max_y + tb_height + 1)
         #HARDCORE ALERT TODO fix here
         self.prices = {"troop_price":{"yaya_asker":{"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"},"zirhli_asker":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"}, "atli_asker":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"}, "kusatma_makinesi":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"} }, "army_price": {"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"}}
         #END OF HARDCODE
@@ -1153,13 +1155,14 @@ class gui(object):
                 text = "x: {} y: {}".format(str(self.cur_x + int(self.max_x/2)),str(self.cur_y + int(self.max_y/2)))
             else:
                 if self.is_showed(self.selected):
-                    text = "x: {} y:{} Secim: {}".format(str(self.cur_x + int(self.max_x/2)), str(self.cur_y + int(self.max_y/2)), self.selected["name"])
+                    text = "x: {} y: {} Secim: {}".format(str(self.cur_x + int(self.max_x/2)), str(self.cur_y + int(self.max_y/2)), self.selected["name"])
                 else:
-                    text = "x: {} y:{}".format(str(self.cur_x + int(self.max_x / 2)), str(self.cur_y + int(self.max_y/2)))
+                    text = "x: {} y: {}".format(str(self.cur_x + int(self.max_x / 2)), str(self.cur_y + int(self.max_y/2)))
             self.screen.addstr(self.max_y+ 1, int(self.max_x/2) - 4, text, self.bold)
             self.screen.refresh()
             if not self.lockmode:
                 self.tb.world_tb()
+            self.nb.hud()
             curses.noecho()
             self.screen.keypad(True)
             try:
@@ -1224,9 +1227,32 @@ class gui(object):
 
 class notification_bar(object):
     def __init__(self,y):
+        self.y = y
+        self.green = curses.color_pair(10)
+        self.yellow = curses.color_pair(11)
+        self.feedpool = infopool("notification")
+        self.feedpool.load()
+        if not -1 in self.feedpool.pool:
+            self.feedpool.pool[-1] = []
         self.config = config("notification_bar")
         if not self.config.control():
-            self.mode = ""#TODO
+            self.mode = "simple"
+            self.config.add("mode", "simple")
+        else:
+            self.mode = self.config.config_table["mode"]
+
+    def hud(self):
+        if self.mode == "simple":
+            self.simple()
+        
+    def simple(self):
+        self.win = curses.newwin(3, 40, self.y, 1)
+        self.win.clear()
+        self.win.addstr(1, 1, "Okunmamis:", self.yellow)
+        okunmamis_count = len(self.feedpool.pool[-1])
+        self.win.addstr(1, 11, "{}".format(str(okunmamis_count)), self.green)
+        self.win.border(0)
+        self.win.refresh()
 
 
 class toolbar(object):
