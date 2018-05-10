@@ -44,6 +44,12 @@ class infopool(object):
             idlist.append(id)
         return idlist
 
+    def remove_by_id(self, id):
+        try:
+            del self.pool[id]
+            self.info_ids.remove(id)
+        except KeyError:
+            self.log.write("havuzda {} diye bir id bulunamadigindan silme islemi basarisiz oldu".format(str(id)))
     def remove(self, data):
         info_id = self.findbyid(data)
         try:
@@ -1226,6 +1232,7 @@ class gui(object):
                 self.materials()
 
             if getkey == "b":#bildirimler
+              while 1:
                 not_read = []
                 read = []
                 read_header = []
@@ -1247,7 +1254,63 @@ class gui(object):
                     for ntf in not_read:
                         not_read_header.append("*"+ntf["header"])
 
-                self.common_menu(["[Bildirimleri Sil]"]+not_read_header+read_header, "Bildirimler", "Okunmamis:{}, Toplam:{}".format(str(len(not_read)), str(len(not_read)+len(read))))
+                fb = self.common_menu(["[Bildirimleri Sil]"]+not_read_header+read_header, "Bildirimler", "Okunmamis:{}, Toplam:{}".format(str(len(not_read)), str(len(not_read)+len(read))))
+                if fb == None :
+                    break
+                if fb == 0:
+                    pass#TODO delete notification menu
+
+                else:
+                    if fb <= len(not_read):
+                        chosen = not_read[fb -1]
+                    else:
+                        chosen = read[fb -1-len(not_read)]
+                    desc = chosen["desc"]
+                    desclist = []
+                    if len(desc)>self.max_x:
+                        count = 0
+                        current = ""
+                        for char in list(desc):
+                            current += char
+                            count += 1
+                            if count == self.max_x:
+                                desclist.append(current)
+                                count = 0
+                                current = ""
+                        if not current == "":
+                            desclist.append(current)
+                    else:
+                        desclist = [desc]
+                    while 1:
+                        self.screen.clear()
+                        self.screen.addstr(1, 5, chosen["header"], self.bold)
+                        ndx = 0
+                        for i in desclist:
+                            self.screen.addstr(3+ndx, 1, i)
+                            ndx += 1
+                        self.screen.refresh()
+                        self.tb.ntf_tb()
+                        try:
+                            self.nb.feedpool.pool[-1].remove(chosen["id"])#Bildirimi okunmus bildirimlerin idlerinin oldugu listeden kaldirmak icin.
+                        except ValueError:#eger bildirim daha onceden okunmussa valuerror verir
+                            pass
+                        self.nb.feedpool.save()
+                        curses.noecho()
+                        self.screen.keypad(True)
+                        try:
+                            getkey = self.screen.getkey(9, 1)
+                        except KeyboardInterrupt:
+                            curses.endwin()
+                            print("Istemci Sonlandirildi")
+                            os._exit(0)
+                        curses.echo()
+                        self.screen.keypad(False)
+                        if getkey == "q":
+                            break
+                        if getkey == "x":
+                            self.nb.feedpool.remove_by_id(chosen["id"])
+                            self.nb.feedpool.save()
+                            break
 
 class notification_bar(object):
     def __init__(self,y):
@@ -1336,6 +1399,14 @@ class toolbar(object):
         self.tb.addstr(3, 4, ":Devam Et", self.bold)
         self.tb.addstr(4, 1, "(q)", self.yellow)
         self.tb.addstr(4, 4, ":Cik", self.bold)
+        self.tb.refresh()
+
+    def ntf_tb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(q)", self.yellow)
+        self.tb.addstr(1, 4, ":Geri Don", self.bold)
+        self.tb.addstr(2, 1, "(x)", self.yellow)
+        self.tb.addstr(2, 4, ":Bildirimi Sil", self.bold)
         self.tb.refresh()
 
     def common_tb(self):
