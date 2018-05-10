@@ -1274,7 +1274,7 @@ class gui(object):
                         for char in list(desc):
                             current += char
                             count += 1
-                            if count == self.x:
+                            if count == x:
                                 desclist.append(current)
                                 count = 0
                                 current = ""
