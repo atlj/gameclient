@@ -263,7 +263,7 @@ class client(object):
 
 class gui(object):
 
-    def __init__(self, max_x, max_y, tb_height = 5, tb_width = 30):
+    def __init__(self, max_x, max_y, tb_height = 6, tb_width = 30):
         self.log = logger("gui")
         self.err = Error_Handler()
         self.max_x = max_x
@@ -1225,6 +1225,15 @@ class gui(object):
                 self.lockmode = True
                 self.materials()
 
+            if getkey == "b":#bildirimler
+                not_read = []
+                read = []
+                for id in self.nb.feedpool.pool:
+                    if id in self.nb.feedpool.pool[-1]:
+                        not_read.append(self.nb.feedpool.pool[id])
+                    else:
+                        read.append(self.nb.feedpool.pool[id])#TODO
+
 class notification_bar(object):
     def __init__(self,y):
         self.y = y
@@ -1278,6 +1287,8 @@ class toolbar(object):
         self.tb.addstr(5,4, ":Kale Menusu", self.bold)
         self.tb.addstr(6, 1, "(m)" , self.yellow)
         self.tb.addstr(6, 4, ":Materyaller", self.bold)
+        self.tb.addstr(7, 1, "(b)", self.yellow)
+        self.tb.addstr(7, 4, ":Bildirimler", self.green)
         self.tb.refresh()
 
     def army_tb(self):
