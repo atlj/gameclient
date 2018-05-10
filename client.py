@@ -1267,13 +1267,14 @@ class gui(object):
                         chosen = read[fb -1-len(not_read)]
                     desc = chosen["desc"]
                     desclist = []
-                    if len(desc)>self.max_x:
+                    x, y = self.screen.getmaxyx()
+                    if len(desc)>x:
                         count = 0
                         current = ""
                         for char in list(desc):
                             current += char
                             count += 1
-                            if count == self.max_x:
+                            if count == self.x:
                                 desclist.append(current)
                                 count = 0
                                 current = ""
