@@ -1,6 +1,6 @@
 import socket, time, os, json, curses, form, menu
 from threading import Thread
-import pickle
+import pickle, random
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 cdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -263,7 +263,7 @@ class client(object):
 
 class gui(object):
 
-    def __init__(self, max_x, max_y, tb_height = 6, tb_width = 30):
+    def __init__(self, max_x, max_y, tb_height = 7, tb_width = 30):
         self.log = logger("gui")
         self.err = Error_Handler()
         self.max_x = max_x
@@ -290,7 +290,7 @@ class gui(object):
         self.armies = []
         self.lockmode = False
         self.client = None
-        self.nb = notification_bar(max_y + tb_height + 1)
+        self.nb = notification_bar(max_y + tb_height + 2)
         #HARDCORE ALERT TODO fix here
         self.prices = {"troop_price":{"yaya_asker":{"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"},"zirhli_asker":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"}, "atli_asker":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"}, "kusatma_makinesi":{"Demir":"N/A","Odun":"N/A", "Kil":"N/A"} }, "army_price": {"Demir":"N/A", "Odun":"N/A", "Kil":"N/A"}}
         #END OF HARDCODE
@@ -792,7 +792,7 @@ class gui(object):
                         pos = 0
                         cur_page_index = 0
 
-            if getkey == "e":
+            if getkey == "f":
                 return cur_page_index * max_count + pos
 
             if getkey == "q":
@@ -1228,11 +1228,26 @@ class gui(object):
             if getkey == "b":#bildirimler
                 not_read = []
                 read = []
+                read_header = []
+                not_read_header = []
                 for id in self.nb.feedpool.pool:
                     if id in self.nb.feedpool.pool[-1]:
                         not_read.append(self.nb.feedpool.pool[id])
                     else:
-                        read.append(self.nb.feedpool.pool[id])#TODO
+                        if not id == -1:
+                            read.append(self.nb.feedpool.pool[id])
+
+                if not read == []:
+                    self.log.write(str(read))
+                    read = sorted(read, reverse = True, key= lambda x:x["pos"])
+                    for ntf in read:
+                        read_header.append(ntf["header"])
+                if not not_read == []:
+                    not_read = sorted(not_read, reverse = True,key= lambda x:x["pos"])
+                    for ntf in not_read:
+                        not_read_header.append("*"+ntf["header"])
+
+                self.common_menu(["[Bildirimleri Sil]"]+not_read_header+read_header, "Bildirimler", "Okunmamis:{}, Toplam:{}".format(str(len(not_read)), str(len(not_read)+len(read))))
 
 class notification_bar(object):
     def __init__(self,y):
@@ -1243,7 +1258,7 @@ class notification_bar(object):
         self.feedpool.load()
         if not -1 in self.feedpool.pool:
             self.feedpool.pool[-1] = []
-        self.config = config("notification_bar")
+        self.config = config("notification_bar.conf")
         if not self.config.control():
             self.mode = "simple"
             self.config.add("mode", "simple")
@@ -1277,6 +1292,8 @@ class toolbar(object):
         self.tb.clear()
         self.tb.addstr(1,1,"(w/a/s/d)",self.yellow)
         self.tb.addstr(1,10,":Yon", self.bold)
+        self.tb.addstr(6,18, "(b)", self.yellow)
+        self.tb.addstr(6,21, ":Bildirimler", self.bold)
         self.tb.addstr(2,1,"(q/e)",self.yellow)
         self.tb.addstr(2,6,":Onceki/Sonraki Secim", self.bold)
         self.tb.addstr(3,1,"(f)",self.yellow)
@@ -1287,8 +1304,6 @@ class toolbar(object):
         self.tb.addstr(5,4, ":Kale Menusu", self.bold)
         self.tb.addstr(6, 1, "(m)" , self.yellow)
         self.tb.addstr(6, 4, ":Materyaller", self.bold)
-        self.tb.addstr(7, 1, "(b)", self.yellow)
-        self.tb.addstr(7, 4, ":Bildirimler", self.green)
         self.tb.refresh()
 
     def army_tb(self):
@@ -1545,7 +1560,13 @@ class Handler(object):
                         self.gui.alert(["Ayni Isimli Bir Ordu Bulunmakta"], pro_color = self.gui.yellow)
                     if data[1] == "err_material":
                         self.gui.alert(["Yetersiz Materyal"], pro_color = self.gui.yellow)
-
+            if tag == "notification":
+                for ntf in data:
+                    randid = self.gui.nb.feedpool.getid()
+                    ntf["id"]=randid
+                    self.gui.nb.feedpool.pool[randid] = ntf
+                    self.gui.nb.feedpool.pool[-1].append(randid)
+                self.gui.nb.feedpool.save()
             if tag == "sync_feedback":
                 for element in data[0]["generic"]["replace"]:
                     for obj in element:
@@ -1592,7 +1613,6 @@ class Handler(object):
                 if fb["data"] == [False]:
                     continue
                 break
-
     def sync(self, data, idlist):
         self.client.send({"tag":"sync", "data":[data, idlist]})
 
@@ -1600,8 +1620,8 @@ class Handler(object):
         self.client.positive_fb()#hata verebilir
         self.control()
         self.add_thread()
+        self.client.send({"tag":"notification_control", "data":[]})
         self.sync(["generic", "player"],{"generic_idlist":self.genericpool.sum_ids(),"player_idlist":self.playerpool.sum_ids()})
-        self.log.write("Arayuz Baslatiliyor")
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
         self.gui.client = self.client
         self.gui.map = self.genericpool.sum("place")
