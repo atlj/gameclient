@@ -1231,6 +1231,13 @@ class gui(object):
                 self.lockmode = True
                 self.materials()
 
+            if getkey == "c":#dunya menusu
+                world_menu_list = ["Oyunculari Goruntule"]
+                highlighted = self.placemenu(world_menu_list) - 1
+                if highlighted == 0:
+                    pass
+
+
             if getkey == "b":#bildirimler
               while 1:
                 not_read = []
@@ -1282,7 +1289,8 @@ class gui(object):
                             desclist.append(current)
                     else:
                         desclist = [desc]
-                    while 1:
+                    if chosen["type"] == "ntf":
+                      while 1:
                         self.screen.clear()
                         self.screen.addstr(1, 5, chosen["header"], self.bold)
                         ndx = 0
@@ -1312,6 +1320,11 @@ class gui(object):
                             self.nb.feedpool.remove_by_id(chosen["id"])
                             self.nb.feedpool.save()
                             break
+                    if chosen["type"] == "msg":
+                        pass#TODO
+                    if chosen["type"] == "rqs":
+                        pass#TODO
+
 
 class notification_bar(object):
     def __init__(self,y):
