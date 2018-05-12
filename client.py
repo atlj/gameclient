@@ -147,6 +147,7 @@ class client(object):
         self.port = port
         self.err = Error_Handler()
         self.state = "no-connection"
+        self.socketqueue = []
 
     def register(self, user, passw):
         self.user = user
@@ -213,6 +214,7 @@ class client(object):
         while 1:
             try:
                 message = s.recv(buff).decode("utf-8")
+                message = message.replace("\\n", "").split("\n")[0]
                 package = json.loads(message)
                 self.log.write("gelen veri >> "+str(package))
                 return package
@@ -225,32 +227,44 @@ class client(object):
 
     def listen(self):
 
-        while 1:
+        if self.socketqueue == [""]:
+            self.socketqueue = []
+        if not self.socketqueue == []:
+            message = self.socketqueue.pop(0)
+        else:
             try:
                 message = s.recv(1024**2).decode("utf-8")
+                if "\\n" in message:
+                    message = message.replace("\\n", "")
+                splitted = message.split("\n")
+                if len(splitted) == 2:
+                    message = splitted[0]
+                else:
+                    splitted = self.socketqueue
+                    message = self.socketqueue.pop(0)
             except socket.error:
                 self.log.write("Baglanti kesildi")
                 feedback = self.err.connect_error()
                 if not feedback:
-                    continue
+                    pass#TODO buraya el at
                 else:
                     self.ip = feedback[0]
                     self.port = feedback[1]
                     self.connect()
                     if self.state == "logged":
                         if self.login(self.user, self.passw):
-                            continue
+                            print("HATA")#TODO buraya da bi el lazim
 
 
-            try:
-                package = json.loads(message)
-                package["tag"]
-                self.log.write("gelen veri >> "+str(package))
-                return package
+        try:
+            package = json.loads(message)
+            package["tag"]
+            self.log.write("gelen veri(listen fonksiyonu) >> "+str(package))
+            return package
 
-            except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
-                self.log.write("Veri islenemedi: "+message)
-                self.err.force_exit()
+        except Exception as e:#hata adi sistemden sisteme farklilik gosteriyor.
+            self.log.write("Veri islenemedi: "+message)
+            self.err.force_exit()
 
 
 
