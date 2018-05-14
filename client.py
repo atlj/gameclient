@@ -284,6 +284,7 @@ class client(object):
 class gui(object):
 
     def __init__(self, max_x, max_y, tb_height = 7, tb_width = 30):
+        self.fps = 60 #Insert PCmasterrace Propaganda here
         self.log = logger("gui")
         self.err = Error_Handler()
         self.max_x = max_x
@@ -1151,10 +1152,15 @@ class gui(object):
                 self.client.send({"tag":"create_army", "data":[str(army_name), str(general_name)]})
                 break
 
-    def printmap(self):#Dunya haritasini ekrana yazdirir
+    def frame_handler(self, fps):
+        Thread(target=self.control).start()
         while 1:
+            self.frame()
+            time.sleep(1/fps)
+
+    def frame(self):
+        if self.frame_lock:
             self.screen.clear()
-            self.screen.refresh()
             self.screen.border(0)
             counter = 1
             for line in range(self.max_y):#sutunlari kontrol eder
@@ -1180,9 +1186,13 @@ class gui(object):
                     text = "x: {} y: {}".format(str(self.cur_x + int(self.max_x / 2)), str(self.cur_y + int(self.max_y/2)))
             self.screen.addstr(self.max_y+ 1, int(self.max_x/2) - 4, text, self.bold)
             self.screen.refresh()
+            self.nb.hud()
             if not self.lockmode:
                 self.tb.world_tb()
-            self.nb.hud()
+
+    def control(self):#Dunya haritasini ekrana yazdirir
+        while 1:
+            self.frame_lock = True
             curses.noecho()
             self.screen.keypad(True)
             try:
@@ -1193,6 +1203,7 @@ class gui(object):
                 os._exit(0)
             curses.echo()
             self.screen.keypad(False)
+            self.frame_lock = False
 
             if getkey == "q":#onceki secim
                 self.select("back")
@@ -1233,6 +1244,37 @@ class gui(object):
             if getkey == "f":#secim yap
                 if self.is_showed(self.selected):
                     self.minimenu(self.selected)
+
+            if getkey == "k":#cikis yap
+                miniscreen = curses.newwin(5, 37, int(self.max_y/2)-2, int(self.max_x/2)-16)
+                pos = False
+                while 1:
+                    miniscreen.clear()
+                    miniscreen.border(0)
+                    miniscreen.addstr(1, 2, "Cikmak Istediginize Emin Misiniz?", self.bold)
+                    if pos == False:
+                        miniscreen.addstr(3, 9, "Hayir", self.green)
+                        miniscreen.addstr(3, 20, "Evet")
+
+                    if pos == True:
+                        miniscreen.addstr(3, 9, "Hayir")
+                        miniscreen.addstr(3, 20 ,"Evet", self.green)
+                    miniscreen.refresh()
+                    self.tb.yntb()
+                    curses.noecho()
+                    miniscreen.keypad(True)
+                    getkey = miniscreen.getkey(3, 1)
+                    curses.echo()
+                    miniscreen.keypad(False)
+                    if getkey in ["d", "a"]:
+                        pos = not pos
+                    if getkey == "e":
+                        break
+
+                if pos:
+                    curses.endwin()
+                    print("Istemci Sonlandirildi")
+                    os._exit(0)
 
             if getkey == "p":#kale menusu
                 player_menu_list = ["Ordu Tasarla"]#edit here
@@ -1379,6 +1421,14 @@ class toolbar(object):
         self.bold = curses.A_BOLD
         #self.tb.border(0)
 
+    def yntb(self):
+        self.tb.clear()
+        self.tb.addstr(1, 1, "(a/d)", self.yellow)
+        self.tb.addstr(1, 6, ":Sag/Sol", self.bold)
+        self.tb.addstr(2, 1, "(e)", self.yellow)
+        self.tb.addstr(2, 4, ":Sec", self.bold)
+        self.tb.refresh()
+
     def world_tb(self):
         self.tb.clear()
         self.tb.addstr(1,1,"(w/a/s/d)",self.yellow)
@@ -1393,6 +1443,8 @@ class toolbar(object):
         self.tb.addstr(4,4,":Mekan Listesi",self.bold)
         self.tb.addstr(5,1, "(p)", self.yellow)
         self.tb.addstr(5,4, ":Kale Menusu", self.bold)
+        self.tb.addstr(5, 18, "(k)", self.yellow)
+        self.tb.addstr(5, 21, ":Cikis Yap", self.bold)
         self.tb.addstr(6, 1, "(m)" , self.yellow)
         self.tb.addstr(6, 4, ":Materyaller", self.bold)
         self.tb.refresh()
@@ -1751,8 +1803,7 @@ class Handler(object):
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
         self.gui.client = self.client
         self.gui.map = self.genericpool.sum("place")
-        
-        self.gui.printmap()
+        self.gui.frame_handler(10)
 
 if __name__ == "__main__":
     Handler_object = Handler(42, 18)
