@@ -1156,7 +1156,12 @@ class gui(object):
         Thread(target=self.control).start()
         while 1:
             self.frame()
-            time.sleep(1/fps)
+            try:
+                time.sleep(1/fps)
+            except KeyboardInterrupt:
+                curses.endwin()
+                print("Istemci Sonlandirildi")
+                os._exit(0)
 
     def frame(self):
         if self.frame_lock:
@@ -1806,6 +1811,6 @@ class Handler(object):
         self.gui.frame_handler(10)
 
 if __name__ == "__main__":
-    Handler_object = Handler(42, 18)
+    Handler_object = Handler(80, 30)
     Handler_object.loopmode = True
     Handler_object.main()
