@@ -240,7 +240,7 @@ class client(object):
                 if len(splitted) == 2:
                     message = splitted[0]
                 else:
-                    splitted = self.socketqueue
+                    self.socketqueue = splitted
                     message = self.socketqueue.pop(0)
             except socket.error:
                 self.log.write("Baglanti kesildi")
@@ -1666,11 +1666,38 @@ class Handler(object):
                     self.gui.nb.feedpool.pool[randid] = ntf
                     self.gui.nb.feedpool.pool[-1].append(randid)
                 self.gui.nb.feedpool.save()
+            if tag == "update":
+                if "generic" in data[0]:
+                    for element in data[0]["generic"]["replace"]:
+                        for obj in element:
+                            self.genericpool.replace(obj, element[obj])
+
+                    for element in data[0]["generic"]["delete"]:
+                        self.genericpool.remove(element)
+                    self.genericpool.save()
+                    self.gui.map = self.genericpool.sum("place")
+                if "player" in data[0]:
+                    for element in data[0]["player"]["replace"]:
+                        for obj in element:
+                            self.playerpool.replace(obj, element[obj])
+
+                    for element in data[0]["player"]["delete"]:
+                        self.playerpool.remove(element)
+                    self.playerpool.save()
+                    if not data[0]["player"]["replace"] == []:
+                        element = self.playerpool.sum("materials")[0]
+                        self.gui.iron = element["Demir"]
+                        self.gui.clay = element["Kil"]
+                        self.gui.wood = element["Odun"]
+                        self.gui.materials_refresher()
+                        self.gui.armies = self.playerpool.sum("army")
+
+
             if tag == "sync_feedback":
                 for element in data[0]["generic"]["replace"]:
                     for obj in element:
                         self.genericpool.replace(obj, element[obj])
-                        self.genericpool.save()
+                    self.genericpool.save()
                 for element in data[0]["generic"]["delete"]:
                     self.genericpool.remove(element)
                     self.genericpool.save()
