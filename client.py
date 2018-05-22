@@ -1152,19 +1152,8 @@ class gui(object):
                 self.client.send({"tag":"create_army", "data":[str(army_name), str(general_name)]})
                 break
 
-    def frame_handler(self, fps):
-        Thread(target=self.control).start()
-        while 1:
-            self.frame()
-            try:
-                time.sleep(1/fps)
-            except KeyboardInterrupt:
-                curses.endwin()
-                print("Istemci Sonlandirildi")
-                os._exit(0)
-
     def frame(self):
-        if self.frame_lock:
+        while 1:
             self.screen.clear()
             self.screen.border(0)
             counter = 1
@@ -1195,9 +1184,6 @@ class gui(object):
             if not self.lockmode:
                 self.tb.world_tb()
 
-    def control(self):#Dunya haritasini ekrana yazdirir
-        while 1:
-            self.frame_lock = True
             curses.noecho()
             self.screen.keypad(True)
             try:
@@ -1208,7 +1194,6 @@ class gui(object):
                 os._exit(0)
             curses.echo()
             self.screen.keypad(False)
-            self.frame_lock = False
 
             if getkey == "q":#onceki secim
                 self.select("back")
@@ -1808,9 +1793,9 @@ class Handler(object):
         self.gui = gui(self.gui_height, self.gui_width, 7, 40)#burdaki harcode sikinti yapablir
         self.gui.client = self.client
         self.gui.map = self.genericpool.sum("place")
-        self.gui.frame_handler(10)
+        self.gui.frame()
 
 if __name__ == "__main__":
-    Handler_object = Handler(80, 30)
+    Handler_object = Handler(42, 20)
     Handler_object.loopmode = True
     Handler_object.main()
